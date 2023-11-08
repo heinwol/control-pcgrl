@@ -85,3 +85,6 @@ discriminator.pt
 
 # Ignore wandb logs
 wandb/
+
+# heinwol modifications
+.direnv
