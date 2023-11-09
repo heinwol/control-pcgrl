@@ -30,10 +30,14 @@
         };
 
         devShells.default = pkgs.mkShell {
-          packages = [
-            (pkgs.poetry.override { python3 = pkgs.python310; })
+          packages = with pkgs; [
+            (poetry.override { python3 = pkgs.python310; })
             # devEnv
-            (pkgs.python310)
+            python310
+            swig4 # to build box2d-py
+            cmake # to build atari-py
+            zlib.dev # to build atari-py
+            gcc # to build whatever
           ];
         };
       });
