@@ -6,7 +6,7 @@
 	url = git@github.com:smearle/pytorch-neat
 [submodule "dqd"]
 	path = dqd
-	url = git@github.com:icaros-usc/dqd
+	# url = git@github.com:icaros-usc/dqd
 	url = https://github.com/icaros-usc/dqd
 [submodule "qdpy"]
 	path = qdpy

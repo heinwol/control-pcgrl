@@ -2,9 +2,11 @@ from pdb import set_trace as TT
 import sys
 
 import gymnasium as gym
-from gymnasium.envs.classic_control.rendering import get_window, get_display
+
+# from gymnasium.envs.classic_control.rendering import get_window, get_display
 import pyglet
 from pyglet import gl
+
 # from pyglet.gui.buttons import Button
 
 
@@ -42,10 +44,9 @@ from pyglet import gl
 #             def on_close():
 #                 self.isopen = False
 
-            
+
 #             reset_button = Button()
 #             @self.window.event
-
 
 
 #         assert len(arr.shape) == 3, "You passed in an image with the wrong number shape"
@@ -75,6 +76,7 @@ from pyglet import gl
 if __name__ == "__main__":
     from tkinter import *
     from tkinter import ttk
+
     root = Tk()
     frm = ttk.Frame(root, padding=10)
     frm.grid()
