@@ -94,12 +94,16 @@
           inherit devEnv;
         };
 
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            (poetry.override { python3 = pkgs.python310; })
-            python310
-          ]
-          ++ buildStuff;
+        devShells = rec {
+          simple = pkgs.mkShell {
+            packages = with pkgs; [
+              (poetry.override { python3 = pkgs.python310; })
+              python310
+            ]
+            ++ buildStuff;
+          };
+          packaged = devEnv.env;
+          default = packaged;
         };
       });
 }
