@@ -28,12 +28,60 @@
           gobject-introspection # -//-
         ];
 
+        pypkgs-build-requirements = with pkgs; {
+          # box2d-py = [ "setuptools" swig4 ];
+          atari-py = [ "setuptools" cmake zlib.dev ];
+          gym-notices = [ "setuptools" ];
+          neat-python = [ "setuptools" ];
+          tensorflow-io-gcs-filesystem = [ libtensorflow ];
+          gizeh = [ "setuptools" ];
+          # numba = [ tbb.dev ];
+          # swig = [ "setuptools" "skbuild" ];
+          # hydra-core = [ "setuptools" ];
+          # pygobject = [ "setuptools" pkg-config cairo gobject-introspection ];
+        };
+
+        p2n-overrides = poetry2nixLib.defaultPoetryOverrides.extend (self: super:
+          (builtins.mapAttrs
+            (package: build-requirements:
+              (builtins.getAttr package super).overridePythonAttrs (old: {
+                buildInputs = (old.buildInputs or [ ]) ++ (
+                  builtins.map
+                    (pkg:
+                      if builtins.isString pkg
+                      then builtins.getAttr pkg super
+                      else pkg)
+                    build-requirements
+                );
+              })
+            )
+            pypkgs-build-requirements)
+          // {
+            inherit (pkgs.python310Packages)
+              pygame pyglet hydra-core llvmlite numba numpy;
+            # dm-tree 
+            # swig = pkgs.swig4;
+          }
+          // {
+            # box2d-py = super.box2d-py.overrideAttrs (prev: {
+            #   preferWheel = true;
+            #   # propagatedBuildInputs = (prev.propagatedBuildInputs or [ ]) ++ [ cmake ];
+            #   nativeBuildInputs = (prev.nativeBuildInputs or [ ]) ++ [ ];
+            # });
+            tensorflow = super.tensorflow.overrideAttrs (prev: {
+              preferWheel = false;
+            });
+          }
+        );
+
         devEnv = (poetry2nixLib.mkPoetryEnv {
           projectDir = self;
           python = pkgs.python310;
+          overrides = p2n-overrides;
+          preferWheels = true; # I don't want to compile all that
         });
         # }).overrideAttrs (oldAttrs: {
-        #   # propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ buildStuff;
+        #   propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ buildStuff;
         # });
 
         app = poetry2nixLib.mkPoetryApplication { projectDir = self; };
