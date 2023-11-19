@@ -18,27 +18,40 @@
         # inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
         poetry2nixLib = (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; });
 
-        devEnv = poetry2nixLib.mkPoetryEnv {
+        buildStuff = with pkgs; [
+          swig4 # to build box2d-py
+          cmake # to build atari-py
+          zlib.dev # to build atari-py
+          gcc # to build whatever
+          pkg-config # to build pygobject
+          cairo # -//-
+          gobject-introspection # -//-
+        ];
+
+        devEnv = (poetry2nixLib.mkPoetryEnv {
           projectDir = self;
           python = pkgs.python310;
-        };
+        });
+        # }).overrideAttrs (oldAttrs: {
+        #   # propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ buildStuff;
+        # });
+
+        app = poetry2nixLib.mkPoetryApplication { projectDir = self; };
+
       in
       {
         packages = {
-          myapp = poetry2nixLib.mkPoetryApplication { projectDir = self; };
-          default = self.packages.${system}.myapp;
+          inherit app;
+          default = self.packages.${system}.app;
+          inherit devEnv;
         };
 
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             (poetry.override { python3 = pkgs.python310; })
-            # devEnv
             python310
-            swig4 # to build box2d-py
-            cmake # to build atari-py
-            zlib.dev # to build atari-py
-            gcc # to build whatever
-          ];
+          ]
+          ++ buildStuff;
         };
       });
 }
