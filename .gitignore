@@ -69,7 +69,7 @@ multirun/*
 *.out
 
 # VSCode
-.vscode/
+# .vscode/
 
 # # Ignore PNG files (Wait... why?)
 # *.png
