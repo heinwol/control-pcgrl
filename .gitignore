@@ -89,3 +89,4 @@ wandb/
 # heinwol modifications
 .direnv
 submodules/
+**/result

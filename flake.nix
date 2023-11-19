@@ -58,7 +58,7 @@
             pypkgs-build-requirements)
           // {
             inherit (pkgs.python310Packages)
-              pygame pyglet hydra-core llvmlite numba numpy;
+              pygame hydra-core llvmlite numba numpy pyyaml;
             # dm-tree 
             # swig = pkgs.swig4;
           }
