@@ -15,6 +15,7 @@
       let
         # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
         pkgs = nixpkgs.legacyPackages.${system};
+        pythonPkgs = pkgs.python310Packages;
         # inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
         poetry2nixLib = (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; });
 
@@ -33,7 +34,9 @@
           atari-py = [ "setuptools" cmake zlib.dev ];
           gym-notices = [ "setuptools" ];
           neat-python = [ "setuptools" ];
-          tensorflow-io-gcs-filesystem = [ libtensorflow ];
+          tensorflow-io-gcs-filesystem = [
+            (pythonPkgs.tensorflow.overrideAttrs { version = "2.13"; }).libtensorflow
+          ];
           gizeh = [ "setuptools" ];
           # numba = [ tbb.dev ];
           # swig = [ "setuptools" "skbuild" ];
@@ -57,8 +60,14 @@
             )
             pypkgs-build-requirements)
           // {
-            inherit (pkgs.python310Packages)
-              pygame hydra-core llvmlite numba numpy pyyaml;
+            inherit (pythonPkgs)
+              # pygame
+              # hydra-core
+              llvmlite
+              numba
+              numpy
+              pyyaml;
+
             # dm-tree 
             # swig = pkgs.swig4;
           }
@@ -68,9 +77,22 @@
             #   # propagatedBuildInputs = (prev.propagatedBuildInputs or [ ]) ++ [ cmake ];
             #   nativeBuildInputs = (prev.nativeBuildInputs or [ ]) ++ [ ];
             # });
-            tensorflow = super.tensorflow.overrideAttrs (prev: {
-              preferWheel = false;
+            # tensorflow = super.tensorflow.overrideAttrs (prev: {
+            #   preferWheel = false;
+            # });
+            pygame = pkgs.python310Packages.pygame.overrideAttrs (oldAttrs: {
+              version = super.pygame.version;
             });
+            # with pkgs.python310Packages;
+            # with super;
+            # (pkgs.callPackage
+            #   pkgs.python310Packages.pygame.override
+            #   {
+            #     inherit (pkgs.darwin.apple_sdk.frameworks) AppKit;
+            #   });
+            # super.pygame.overrideAttrs (prev: {
+            #   preferWheel = false;
+            # });
           }
         );
 
@@ -103,7 +125,7 @@
             ++ buildStuff;
           };
           packaged = devEnv.env;
-          default = packaged;
+          default = simple;
         };
       });
 }

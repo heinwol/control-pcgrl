@@ -56,10 +56,14 @@ joblib = "^1.3.2"
 setuptools = "^68.2.2"
 treelib = "^1.7.0"
 gizeh = "^0.1.11"
-tensorflow = "^2.14.0"
+tensorflow = "=2.13.0"
 pyrsistent = "^0.20.0"
 # pytorch-neat = { path = "/home/heinwol/Documents/temp/pytorch-neat" }
 pytorch-neat = { url = "https://github.com/heinwol/PyTorch-NEAT/releases/download/release1/pytorch_neat-0.1.0-py3-none-any.whl" }
+# tensorflow-io-gcs-filesystem = { version = "^0.34.0", extras = [
+#     # "tensorflow-cpu",
+#     # "tensorflow-gpu",
+# ] }
 
 [tool.poetry.group.control_pcgrl.dependencies]
 pygobject = "^3.46.0"
