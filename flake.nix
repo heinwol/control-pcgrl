@@ -106,7 +106,18 @@
         #   propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ buildStuff;
         # });
 
-        app = poetry2nixLib.mkPoetryApplication { projectDir = self; };
+        devEnvPopulated =
+          (devEnv.env.overrideAttrs (oldAttrs: {
+            buildInputs = with pkgs; [
+              go-task
+              direnv
+            ]
+            ++ buildStuff;
+          }));
+
+        app = poetry2nixLib.mkPoetryApplication {
+          projectDir = self;
+        };
 
       in
       {
@@ -124,7 +135,7 @@
             ]
             ++ buildStuff;
           };
-          packaged = devEnv.env;
+          packaged = devEnvPopulated;
           default = packaged;
         };
       });
