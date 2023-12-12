@@ -9,5 +9,6 @@
         "pytorch-neat",
         "qdpy",
         "result",
+        ".nix-env"
     ]
 }

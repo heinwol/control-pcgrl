@@ -91,3 +91,6 @@ wandb/
 submodules/
 **/result
 .venv
+
+.nix-env
+.task

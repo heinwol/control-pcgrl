@@ -125,7 +125,7 @@
             ++ buildStuff;
           };
           packaged = devEnv.env;
-          default = simple;
+          default = packaged;
         };
       });
 }

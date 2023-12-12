@@ -1,6 +1,6 @@
-FROM tensorflow/tensorflow:1.15.0rc2-gpu-py3
-RUN ["apt-get", "install", "-y", "libsm6", "libxext6", "libxrender-dev"]
+FROM tensorflow/tensorflow:1.15.5-gpu
 RUN ["apt-get", "update"]
+RUN ["apt-get", "install", "-y", "libsm6", "libxext6", "libxrender-dev"]
 RUN ["apt-get", "install", "-y", "python3-opengl"]
 
 
