@@ -14,7 +14,11 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+        # pkgs = nixpkgs.legacyPackages.${system};
         pythonPkgs = pkgs.python310Packages;
         # inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
         poetry2nixLib = (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; });
@@ -107,12 +111,29 @@
         # });
 
         devEnvPopulated =
-          (devEnv.env.overrideAttrs (oldAttrs: {
+          (devEnv.env.overrideAttrs (oldAttrs: rec {
             buildInputs = with pkgs; [
               go-task
               direnv
             ]
             ++ buildStuff;
+
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+              "/usr/local/cuda/lib64"
+              "/usr/local/cuda/extras/CUPTI/lib64"
+              pkgs.cudaPackages_12.cudnn
+            ];
+
+            PATH = pkgs.lib.makeBinPath [
+              "/usr/local/cuda/bin"
+              pkgs.cudaPackages_12.cudnn
+            ];
+
+            shellHook = ''
+              export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$LD_LIBRARY_PATH"
+              export PATH="${PATH}:$PATH"
+            '';
+
           }));
 
         app = poetry2nixLib.mkPoetryApplication {
