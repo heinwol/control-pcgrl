@@ -90,3 +90,4 @@ wandb/
 .direnv
 submodules/
 **/result
+.venv
