@@ -115,22 +115,28 @@
             buildInputs = with pkgs; [
               go-task
               direnv
+              # pkgs.cudaPackages_12.cudnn
             ]
             ++ buildStuff;
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-              "/usr/local/cuda/lib64"
-              "/usr/local/cuda/extras/CUPTI/lib64"
+              # "/usr/local/cuda/lib64"
+              # "/usr/local/cuda/extras/CUPTI/lib64"
               pkgs.cudaPackages_12.cudnn
+              pkgs.cudaPackages_12.nccl
+              pkgs.cudaPackages_12.cudatoolkit
             ];
 
             PATH = pkgs.lib.makeBinPath [
-              "/usr/local/cuda/bin"
+              # "/usr/local/cuda/"
+              pkgs.cudaPackages_12.nccl
               pkgs.cudaPackages_12.cudnn
+              pkgs.cudaPackages_12.cudatoolkit
             ];
 
             shellHook = ''
-              export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$LD_LIBRARY_PATH"
+              export CUDA_PATH=${pkgs.cudaPackages_12.cudatoolkit}
+              export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH"
               export PATH="${PATH}:$PATH"
             '';
 
