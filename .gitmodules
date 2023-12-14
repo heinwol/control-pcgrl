@@ -1,13 +1,17 @@
 [submodule "teachDeepRL"]
 	path = teachDeepRL
 	url = https://github.com/flowersteam/teachDeepRL
+	ignore = dirty
 [submodule "pytorch-neat"]
 	path = pytorch-neat
 	url = git@github.com:smearle/pytorch-neat
+	ignore = dirty
 [submodule "dqd"]
 	path = dqd
 	# url = git@github.com:icaros-usc/dqd
 	url = https://github.com/icaros-usc/dqd
+	ignore = dirty
 [submodule "qdpy"]
 	path = qdpy
 	url = https://gitlab.com/smearle/qdpy
+	ignore = dirty
