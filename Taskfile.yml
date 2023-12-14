@@ -7,9 +7,9 @@ vars:
   WORKDIR: $PWD
 
 tasks:
-  # default:
-    # cmds:
-    #   - echo "{{.GREETING}}, {{.WORKDIR}}"
+  default:
+    cmds:
+      - echo "{{.GREETING}}, {{.WORKDIR}}"
     # silent: true
   profile-build:
     cmds:
@@ -19,3 +19,11 @@ tasks:
       - flake.lock
     generates:
       - .nix-env
+  rclone:
+    cmds:
+      - >
+        rclone sync {{.WORKDIR}} cds:Documents/progs/control-pcgrl
+        --exclude ".direnv/**"
+        --exclude ".nix-env/**"
+        --exclude ".venv/**"
+# --exclude ".git/**"
