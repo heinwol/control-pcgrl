@@ -10,5 +10,6 @@
         "qdpy",
         "result",
         ".nix-env"
-    ]
+    ],
+    "python.analysis.inlayHints.variableTypes": false
 }
