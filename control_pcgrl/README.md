@@ -24,8 +24,8 @@ The below instructions, for controllable RL and evolving diverse generators, res
 # Readme: Illuminating Diverse Neural Cellular Automata for Level Generation
 
 <p align="center">
-	<img height="400px" src="media/zelda_1.gif"/>
-	<img height="400px" src="media/zelda_2.gif"/>
+	<img height="400px" src="../media/zelda_1.gif"/>
+	<img height="400px" src="../media/zelda_2.gif"/>
 </p>
 
 This is the codebase used to generate the results presented in the paper available on [arxiv](https://arxiv.org/abs/2109.05489). It builds on the codebase for PCGRL, whose readme is included below for reference. 
