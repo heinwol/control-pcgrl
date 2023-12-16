@@ -70,7 +70,8 @@
               llvmlite
               numba
               numpy
-              pyyaml;
+              pyyaml
+              ;
 
             # dm-tree 
             # swig = pkgs.swig4;
@@ -87,6 +88,11 @@
             pygame = pkgs.python310Packages.pygame.overrideAttrs (oldAttrs: {
               version = super.pygame.version;
             });
+            # matplotlib = super.matplotlib.overridePythonAttrs (oldAttrs: {
+            #   passthru.args.enableTk = true;
+            #   enableTk = true;
+            #   # passthru = builtins.trace oldAttrs.passthru.args true;
+            # });
             # with pkgs.python310Packages;
             # with super;
             # (pkgs.callPackage
@@ -115,7 +121,13 @@
             buildInputs = with pkgs; [
               go-task
               direnv
+              # tk.dev
               # pkgs.cudaPackages_12.cudnn
+              # tcl
+              # tk
+              # tk.dev
+              # xorg.libX11
+              pythonPkgs.tkinter
             ]
             ++ buildStuff;
 
@@ -164,6 +176,7 @@
           };
           packaged = devEnvPopulated;
           default = packaged;
+          # default = simple;
         };
       });
 }
