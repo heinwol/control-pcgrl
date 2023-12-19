@@ -21,25 +21,25 @@ from control_pcgrl.envs.probs.minecraft.utils import patch_grpc_evocraft_imports
 
 patch_grpc_evocraft_imports()
 
-from control_pcgrl.envs.probs.minecraft.minecraft_2D_maze_prob import (
-    Minecraft2DmazeProblem,
-)
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_maze_prob import (
-    Minecraft3DmazeProblem,
-)
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_rain import Minecraft3Drain
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_holey_maze_prob import (
-    Minecraft3DholeymazeProblem,
-)
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_holey_dungeon_prob import (
-    Minecraft3DholeyDungeonProblem,
-)
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_Parkour_prob import (
-    Minecraft3DParkourProblem,
-)
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_Parkour_ctrl_prob import (
-    Minecraft3DParkourCtrlProblem,
-)
+# from control_pcgrl.envs.probs.minecraft.minecraft_2D_maze_prob import (
+#     Minecraft2DmazeProblem,
+# )
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_maze_prob import (
+#     Minecraft3DmazeProblem,
+# )
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_rain import Minecraft3Drain
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_holey_maze_prob import (
+#     Minecraft3DholeymazeProblem,
+# )
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_holey_dungeon_prob import (
+#     Minecraft3DholeyDungeonProblem,
+# )
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_Parkour_prob import (
+#     Minecraft3DParkourProblem,
+# )
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_Parkour_ctrl_prob import (
+#     Minecraft3DParkourCtrlProblem,
+# )
 
 from control_pcgrl.envs.probs.lego_problem import LegoProblem
 
@@ -63,12 +63,12 @@ PROBLEMS = {
     "loderunner_ctrl": LoderunnerCtrlProblem,
     "face_ctrl": FaceProblem,
     "microstructure": MicroStructureProblem,
-    "minecraft_2D_maze": Minecraft2DmazeProblem,
-    "minecraft_3D_maze": Minecraft3DmazeProblem,
-    "minecraft_3D_rain": Minecraft3Drain,
-    "minecraft_3D_holey_maze": Minecraft3DholeymazeProblem,
-    "minecraft_3D_dungeon_holey": Minecraft3DholeyDungeonProblem,
-    "minecraft_3D_parkour": Minecraft3DParkourProblem,
-    "minecraft_3D_parkour_ctrl": Minecraft3DParkourCtrlProblem,
+    # "minecraft_2D_maze": Minecraft2DmazeProblem,
+    # "minecraft_3D_maze": Minecraft3DmazeProblem,
+    # "minecraft_3D_rain": Minecraft3Drain,
+    # "minecraft_3D_holey_maze": Minecraft3DholeymazeProblem,
+    # "minecraft_3D_dungeon_holey": Minecraft3DholeyDungeonProblem,
+    # "minecraft_3D_parkour": Minecraft3DParkourProblem,
+    # "minecraft_3D_parkour_ctrl": Minecraft3DParkourCtrlProblem,
     "lego": LegoProblem,
 }

@@ -6,5 +6,5 @@ def main():
     print("lala")
 
 
-if __name__ == "main":
-    main()
+# if __name__ == "main":
+main()

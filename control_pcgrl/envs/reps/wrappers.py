@@ -12,8 +12,9 @@ import gymnasium as gym
 from control_pcgrl.configs.config import Config
 from control_pcgrl.envs import helper_3D
 from control_pcgrl.envs.probs.holey_prob import HoleyProblem
-from control_pcgrl.envs.probs.minecraft.mc_render import spawn_3D_maze
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_rain import Minecraft3Drain
+
+# from control_pcgrl.envs.probs.minecraft.mc_render import spawn_3D_maze
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_rain import Minecraft3Drain
 from control_pcgrl.envs.probs.problem import Problem, Problem3D
 import numpy as np
 from PIL import Image
@@ -115,24 +116,24 @@ class RepresentationWrapper:
 
 
 # class Representation3D(rep_cls, Representation3DABC):
-class Representation3D(RepresentationWrapper):
-    """
-    The base class of all the 3D representations
+# class Representation3D(RepresentationWrapper):
+#     """
+#     The base class of all the 3D representations
 
-    map in repr are np.array of numbers
-    """
+#     map in repr are np.array of numbers
+#     """
 
-    _dirs = [(-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1)]
-    _gen_random_map = helper_3D.gen_random_map
+#     _dirs = [(-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1)]
+#     _gen_random_map = helper_3D.gen_random_map
 
-    # def _update_bordered_map(self):
-    # self._bordered_map[1:-1, 1:-1, 1:-1] = self._map
+#     # def _update_bordered_map(self):
+#     # self._bordered_map[1:-1, 1:-1, 1:-1] = self._map
 
-    def render(self, map, mode="human", **kwargs):
-        # TODO: Check if we are Egocentric. If so, render the agent edit. Otherwise, render the whole map (assume cellular)
-        spawn_3D_maze(map)
-        # return self.rep.render(mode, **kwargs)
-        # pass
+#     def render(self, map, mode="human", **kwargs):
+#         # TODO: Check if we are Egocentric. If so, render the agent edit. Otherwise, render the whole map (assume cellular)
+#         spawn_3D_maze(map)
+#         # return self.rep.render(mode, **kwargs)
+#         # pass
 
 
 class HoleyRepresentation(RepresentationWrapper):
@@ -462,22 +463,22 @@ class StaticTileRepresentation(RepresentationWrapper):
         return change, new_pos
 
 
-class RainRepresentation(RepresentationWrapper):
-    def get_action_space(self, dims, num_tiles):
-        # Need no-op because raining sand/acid will always change map (if column is not empty).
-        return spaces.Discrete(num_tiles + 1)
+# class RainRepresentation(RepresentationWrapper):
+#     def get_action_space(self, dims, num_tiles):
+#         # Need no-op because raining sand/acid will always change map (if column is not empty).
+#         return spaces.Discrete(num_tiles + 1)
 
-    # TODO:
-    def update(self, action, **kwargs):
-        # FIXME: Assuming a narrow representation!
-        change, pos = super().update(action, **kwargs)
-        if change:
-            self.unwrapped._map[pos[0], pos[1]] = self.unwrapped._empty_tile
-        return change, pos
+#     # TODO:
+#     def update(self, action, **kwargs):
+#         # FIXME: Assuming a narrow representation!
+#         change, pos = super().update(action, **kwargs)
+#         if change:
+#             self.unwrapped._map[pos[0], pos[1]] = self.unwrapped._empty_tile
+#         return change, pos
 
-    def render(self, map, mode="human", **kwargs):
-        # TODO: just place a sand block at the top
-        spawn_3D_maze(map)
+#     def render(self, map, mode="human", **kwargs):
+#         # TODO: just place a sand block at the top
+#         spawn_3D_maze(map)
 
 
 class MultiActionRepresentation(RepresentationWrapper):
