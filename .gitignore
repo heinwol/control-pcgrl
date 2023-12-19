@@ -94,3 +94,4 @@ submodules/
 
 .nix-env
 .task
+!.vscode
