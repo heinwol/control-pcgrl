@@ -25,7 +25,7 @@ GECCO_CROSS_EVAL = False
 def launch_batch(args, exp_name, collect_params=False):
     with open(f"configs/evo/{args.batch}.yaml", "r") as f:
         batch_config = yaml.safe_load(f)
-    batch_config = namedtuple('batch_config', batch_config.keys())(**batch_config)
+    batch_config = namedtuple("batch_config", batch_config.keys())(**batch_config)
 
     if collect_params:
         settings_list = []
@@ -44,36 +44,60 @@ def launch_batch(args, exp_name, collect_params=False):
     i = 0
 
     # TODO: refactor with itertools
-    settings_prod = itertools.product(batch_config.exp_ids, batch_config.problems, batch_config.representations, 
-                                      batch_config.algos, batch_config.models, batch_config.fix_elites, 
-                                      batch_config.fix_seeds, batch_config.n_steps_lst, batch_config.n_init_states_lst, 
-                                      batch_config.step_sizes, batch_config.n_aux_chans)
+    settings_prod = itertools.product(
+        batch_config.exp_ids,
+        batch_config.problems,
+        batch_config.representations,
+        batch_config.algos,
+        batch_config.models,
+        batch_config.fix_elites,
+        batch_config.fix_seeds,
+        batch_config.n_steps_lst,
+        batch_config.n_init_states_lst,
+        batch_config.step_sizes,
+        batch_config.n_aux_chans,
+    )
     settings_prod = list(settings_prod)
     if settings_prod == 0:
         raise Exception("No valid settings to run.")
-    for exp_id, prob, rep, algo, model, fix_el, fix_seed, n_steps, n_init_states, step_size, n_aux_chan \
-        in settings_prod:
-
+    for (
+        exp_id,
+        prob,
+        rep,
+        algo,
+        model,
+        fix_el,
+        fix_seed,
+        n_steps,
+        n_init_states,
+        step_size,
+        n_aux_chan,
+    ) in settings_prod:
         prob_bcs = batch_config.global_bcs + batch_config.local_bcs[prob]
 
         for bc_pair in prob_bcs:
-
             if model == "CNN" and "cellular" in rep:
-                print("Skipping experiments with CNN model and cellular representation, as this would necessitate "
-                    "an explosion of model parameters.")
+                print(
+                    "Skipping experiments with CNN model and cellular representation, as this would necessitate "
+                    "an explosion of model parameters."
+                )
 
                 continue
 
             # No reason to re-evaluate other than random seeds so this would cause an error
 
             if fix_seed and not fix_el:
-                print("Skipping experiment with fix_seed=True and fix_elites=False. There is no "
-                    "point re-evaluating generators (which are deterministic) on the same seeds.")
+                print(
+                    "Skipping experiment with fix_seed=True and fix_elites=False. There is no "
+                    "point re-evaluating generators (which are deterministic) on the same seeds."
+                )
                 continue
 
             if "cellular" not in rep:
                 if n_steps != batch_config.n_steps_lst[0]:
-                    print("Number of steps does not apply to non-cellular representations.")
+                    print(
+                        "Number of steps does not apply to non-cellular representations."
+                    )
                     continue
 
             if n_aux_chan > 0 and "NCA" not in model:
@@ -85,18 +109,24 @@ def launch_batch(args, exp_name, collect_params=False):
                 continue
 
             if n_init_states == 0 and not (fix_seed and fix_el):
-                print("Skipping experiments with n_init_states=0 and fix_seed=False. The "
-                    "hand-made seed cannot be randomized.")
+                print(
+                    "Skipping experiments with n_init_states=0 and fix_seed=False. The "
+                    "hand-made seed cannot be randomized."
+                )
                 continue
 
             if n_init_states == 0 and "Decoder" in model:
-                print("The hand-made seed is not valid for Decoders")  # (or CPPNs, handled below)
+                print(
+                    "The hand-made seed is not valid for Decoders"
+                )  # (or CPPNs, handled below)
                 continue
 
             if model in ["CPPN", "GenCPPN", "GenCPPN2", "CPPNCA", "DirectEncoding"]:
                 if algo != "ME":
-                    print(f"Skipping experiments with model {model} and algo {algo}. (requires "
-                    "MAP-Elites.)")
+                    print(
+                        f"Skipping experiments with model {model} and algo {algo}. (requires "
+                        "MAP-Elites.)"
+                    )
                     continue
             else:
                 pass
@@ -104,14 +134,18 @@ def launch_batch(args, exp_name, collect_params=False):
 
             if model == "DirectEncoding":
                 if n_init_states != 1:
-                    print("DirectEncoding only works with n_init_states=1. (Seed is ignored.)")
+                    print(
+                        "DirectEncoding only works with n_init_states=1. (Seed is ignored.)"
+                    )
                     continue
                 if not (fix_seed and fix_el):
-                    print("DirectEncoding only works with fix_seed=True and fix_elites=True. (Seed is ignored.)")
+                    print(
+                        "DirectEncoding only works with fix_seed=True and fix_elites=True. (Seed is ignored.)"
+                    )
                     continue
 
-            if 'CPPN' in model:
-                if 'Gen' not in model and model != "CPPNCA":
+            if "CPPN" in model:
+                if "Gen" not in model and model != "CPPNCA":
                     # We could have more initial states, randomized initial states, and re-evaluated elites with generator-CPPNs
                     if n_init_states != 0 or not fix_seed or not fix_el:
                         continue
@@ -120,29 +154,36 @@ def launch_batch(args, exp_name, collect_params=False):
                     continue
 
             # The decoder generates levels in a single pass (from a smaller latent)
-            if ('Decoder' in model or 'DirectEncoding' in model) and n_steps != 1:
-                print('Too many steps for 1-pass generator.')
+            if ("Decoder" in model or "DirectEncoding" in model) and n_steps != 1:
+                print("Too many steps for 1-pass generator.")
                 continue
 
             # For rendering tables for the GECCO paper, we exclude a bunch of experiments.
             if args.cross_eval and GECCO_CROSS_EVAL:
-                if n_init_states == 0 and not (model == "CPPN" or model == "Sin2CPPN" or model == "SinCPPN"):
+                if n_init_states == 0 and not (
+                    model == "CPPN" or model == "Sin2CPPN" or model == "SinCPPN"
+                ):
                     continue
-                if algo == "ME" and step_size != 0.01 or algo == "CMAME" and step_size != 1.0:
+                if (
+                    algo == "ME"
+                    and step_size != 0.01
+                    or algo == "CMAME"
+                    and step_size != 1.0
+                ):
                     continue
                 if algo == "ME" and model not in ["CPPN", "GenCPPN2"]:
                     continue
 
-
             # Write the config file with the desired settings
             exp_config = copy.deepcopy(default_config)
-            exp_config.update({
+            exp_config.update(
+                {
                     "algo": algo,
                     "behavior_characteristics": bc_pair,
                     "exp_name": str(exp_id),
                     "fix_elites": fix_el,
                     "fix_level_seeds": fix_seed,
-#                                               "exp_name": exp_name,
+                    #                                               "exp_name": exp_name,
                     "model": model,
                     "multi_thread": not args.single_thread,
                     "n_aux_chan": n_aux_chan,
@@ -156,7 +197,7 @@ def launch_batch(args, exp_name, collect_params=False):
                     "step_size": step_size,
                     "render": args.render,
                     "n_cpu": args.n_cpu,
-                    "render_profiling": args.render_profiling
+                    "render_profiling": args.render_profiling,
                 }
             )
             if args.render:
@@ -181,20 +222,12 @@ def launch_batch(args, exp_name, collect_params=False):
                         "visualize": True,
                     }
                 )
-            print(
-                "Saving experiment config:\n{}".format(
-                    exp_config
-                )
-            )
-            with open(
-                "configs/evo/auto/settings_{}.json".format(i), "w"
-            ) as f:
-                json.dump(
-                    exp_config, f, ensure_ascii=False, indent=4
-                )
+            print("Saving experiment config:\n{}".format(exp_config))
+            with open("configs/evo/auto/settings_{}.json".format(i), "w") as f:
+                json.dump(exp_config, f, ensure_ascii=False, indent=4)
 
             full_exp_name = get_exp_name(arg_dict=exp_config)
-            full_exp_name = full_exp_name.replace(' ', '').replace("'", "")
+            full_exp_name = full_exp_name.replace(" ", "").replace("'", "")
 
             # Edit the sbatch file to load the correct config file
             if EVALUATE:
@@ -213,9 +246,7 @@ def launch_batch(args, exp_name, collect_params=False):
 
                 # Replace the job name.
                 new_content = re.sub(
-                    "evo_runs/.*\.out", 
-                    f"evo_runs/{full_exp_name}.out", 
-                    new_content
+                    "evo_runs/.*\.out", f"evo_runs/{full_exp_name}.out", new_content
                 )
             with open(script_name, "w") as f:
                 f.write(new_content)
@@ -226,7 +257,7 @@ def launch_batch(args, exp_name, collect_params=False):
             elif LOCAL:
                 os.system("python3 control_pcgrl/evo/evolve.py -la {}".format(i))
                 # Turned off for mid-training evals
-#                                           os.system("ray stop")
+            #                                           os.system("ray stop")
             else:
                 os.system("sbatch {}".format(script_name))
             i += 1
@@ -308,23 +339,23 @@ if __name__ == "__main__":
         "--n_generations",
         type=int,
         default=50000,
-        help="For QD optimization - how many iterations will it take to come up with the final archive of solutions (the last generation)."
+        help="For QD optimization - how many iterations will it take to come up with the final archive of solutions (the last generation).",
     )
 
     opts.add_argument(
         "--render_profiling",
         action="store_true",
-        help="If true, you will get see how long on average it takes to render given level. Slows down the evaluation procedure."
+        help="If true, you will get see how long on average it takes to render given level. Slows down the evaluation procedure.",
     )
 
-    opts.add_argument('-i', '--infer', action='store_true')
-#   opts.add_argument(
-#       "-ss",
-#       "--step_size",
-#       help="Standard deviation of the Gaussian noise added to mutated models.",
-#       type=float,
-#       default=0.01,
-#   )
+    opts.add_argument("-i", "--infer", action="store_true")
+    #   opts.add_argument(
+    #       "-ss",
+    #       "--step_size",
+    #       help="Standard deviation of the Gaussian noise added to mutated models.",
+    #       type=float,
+    #       default=0.01,
+    #   )
     args = opts.parse_args()
     EXP_NAME = args.experiment_name
     EVALUATE = args.evaluate
@@ -333,14 +364,19 @@ if __name__ == "__main__":
 
     if args.cross_eval or args.gif:
         from control_pcgrl.evo.cross_eval import compile_results
+
         settings_list = launch_batch(args, EXP_NAME, collect_params=True)
     if args.cross_eval:
         compile_results(settings_list, tex=args.tex)
         if not args.tex:
-            print("Produced html at evo_runs/cross_eval_{}.html".format(args.experiment_name))
+            print(
+                "Produced html at evo_runs/cross_eval_{}.html".format(
+                    args.experiment_name
+                )
+            )
         else:
-            os.chdir('eval_experiment')
-            os.system(f'pdflatex tables.tex')
+            os.chdir("eval_experiment")
+            os.system(f"pdflatex tables.tex")
     elif args.gif:
         render_gifs(settings_list)
     else:

@@ -19,6 +19,8 @@ The base class for all the problems that can be handled by the interface
 
 map in prob are list of strings
 """
+
+
 class Problem(ABC):
     _tile_types = []
     eval_maps = []
@@ -26,14 +28,22 @@ class Problem(ABC):
     Constructor for the problem that initialize all the basic parameters. Abstract Base Class (ABS) that cannot be
     directly instantiated.
     """
+
     def __init__(self, cfg: Config):
-        self._map_shape = tuple(cfg.task.map_shape)  # convert from omegaconf.listconfig.ListConfig to tuple
-        self._height, self._width = self._map_shape[0], self._map_shape[1]  # Will be overwritten if this is a 3D problem.
+        self._map_shape = tuple(
+            cfg.task.map_shape
+        )  # convert from omegaconf.listconfig.ListConfig to tuple
+        self._height, self._width = (
+            self._map_shape[0],
+            self._map_shape[1],
+        )  # Will be overwritten if this is a 3D problem.
         tiles = self.get_tile_types()
 
         # How much to weight each component of the reward function (which is a linear sum).
         self._reward_weights = cfg.task.weights
-        self._ctrl_reward_weights = cfg.task.weights  # Can make this a separate config attribute later if necessary.
+        self._ctrl_reward_weights = (
+            cfg.task.weights
+        )  # Can make this a separate config attribute later if necessary.
 
         # FIXME: assumption, will overrule a similar declaration by the child.
         self._empty_tile = tiles[0]
@@ -63,7 +73,6 @@ class Problem(ABC):
     def get_tile_int(self, tile):
         return self._tile_int_dict[tile]
 
-
     def is_continuous(self):
         return False
 
@@ -77,6 +86,7 @@ class Problem(ABC):
     Returns:
         int: the used seed (same as input if not None)
     """
+
     def seed(self, seed=None):
         self._random, seed = seeding.np_random(seed)
         return seed
@@ -88,6 +98,7 @@ class Problem(ABC):
     Parameters:
         start_stats (dict(string,any)): the first stats of the map
     """
+
     def reset(self, start_stats):
         self._start_stats = start_stats
 
@@ -97,6 +108,7 @@ class Problem(ABC):
     Returns:
         string[]: that contains all the tile names
     """
+
     def get_tile_types(self):
         return self._tile_types
         # raise NotImplementedError('get_tile_types is not implemented')
@@ -110,9 +122,15 @@ class Problem(ABC):
         probs (dict(string, float)): change the probability of each tile
         intiialization, the names are the same as the tile types from get_tile_types
     """
+
     def adjust_param(self, cfg: Config):
-        self._map_shape = tuple(cfg.task.map_shape)  # convert from omegaconf.listconfig.ListConfig to tuple
-        self._height, self._width = self._map_shape[0], self._map_shape[1]  # Will be overwritten if this is a 3D problem.
+        self._map_shape = tuple(
+            cfg.task.map_shape
+        )  # convert from omegaconf.listconfig.ListConfig to tuple
+        self._height, self._width = (
+            self._map_shape[0],
+            self._map_shape[1],
+        )  # Will be overwritten if this is a 3D problem.
         # prob = kwargs.get('probs')
         # if prob is not None:
         #     for t in prob:
@@ -130,8 +148,9 @@ class Problem(ABC):
     Returns:
         dict(string,any): stats of the current map to be used in the reward, episode_over, debug_info calculations
     """
+
     def get_stats(self, map, **kwargs):
-        raise NotImplementedError('get_graphics is not implemented')
+        raise NotImplementedError("get_graphics is not implemented")
 
     """
     Get the current game reward between two stats
@@ -171,8 +190,9 @@ class Problem(ABC):
         dict(any,any): is a debug information that can be used to debug what is
         happening in the problem
     """
+
     def get_debug_info(self, new_stats, old_stats):
-        raise NotImplementedError('get_debug_info is not implemented')
+        raise NotImplementedError("get_debug_info is not implemented")
 
     def process_observation(self, observation):
         return observation
@@ -185,10 +205,19 @@ class Problem(ABC):
         tiles = self.get_tile_types()
         self._graphics = {}
         for i in range(len(tiles)):
-            color = i * 255 // len(tiles), i * 255 // len(tiles), i * 255 // len(tiles), 255
-            self._graphics[tiles[i]] = Image.new("RGBA", (self._tile_size, self._tile_size), color)
+            color = (
+                i * 255 // len(tiles),
+                i * 255 // len(tiles),
+                i * 255 // len(tiles),
+                255,
+            )
+            self._graphics[tiles[i]] = Image.new(
+                "RGBA", (self._tile_size, self._tile_size), color
+            )
         if render_path:
-            self._graphics["path"] = Image.new("RGBA", (self._tile_size, self._tile_size), color)
+            self._graphics["path"] = Image.new(
+                "RGBA", (self._tile_size, self._tile_size), color
+            )
 
     """
     Get an image on how the map will look like for a specific map
@@ -200,40 +229,103 @@ class Problem(ABC):
         Image: a pillow image on how the map will look like using the problem
         graphics or default grey scale colors
     """
+
     def render(self, map, render_path=None):
         if self._graphics == None:
             self.init_grayscale_graphics()
 
-        full_width = len(map[0])+2*self._border_size[0]
-        full_height = len(map)+2*self._border_size[1]
-        lvl_image = Image.new("RGBA", (full_width*self._tile_size, full_height*self._tile_size), (0,0,0,255))
+        full_width = len(map[0]) + 2 * self._border_size[0]
+        full_height = len(map) + 2 * self._border_size[1]
+        lvl_image = Image.new(
+            "RGBA",
+            (full_width * self._tile_size, full_height * self._tile_size),
+            (0, 0, 0, 255),
+        )
 
         # Background floor everywhere
         for y in range(full_height):
             for x in range(full_width):
-                lvl_image.paste(self._graphics['empty'], (x*self._tile_size, y*self._tile_size, (x+1)*self._tile_size, (y+1)*self._tile_size))
+                lvl_image.paste(
+                    self._graphics["empty"],
+                    (
+                        x * self._tile_size,
+                        y * self._tile_size,
+                        (x + 1) * self._tile_size,
+                        (y + 1) * self._tile_size,
+                    ),
+                )
 
         # Borders
         for y in range(full_height):
             for x in range(self._border_size[0]):
-                lvl_image.paste(self._graphics[self._border_tile], (x*self._tile_size, y*self._tile_size, (x+1)*self._tile_size, (y+1)*self._tile_size))
-                lvl_image.paste(self._graphics[self._border_tile], ((full_width-x-1)*self._tile_size, y*self._tile_size, (full_width-x)*self._tile_size, (y+1)*self._tile_size))
+                lvl_image.paste(
+                    self._graphics[self._border_tile],
+                    (
+                        x * self._tile_size,
+                        y * self._tile_size,
+                        (x + 1) * self._tile_size,
+                        (y + 1) * self._tile_size,
+                    ),
+                )
+                lvl_image.paste(
+                    self._graphics[self._border_tile],
+                    (
+                        (full_width - x - 1) * self._tile_size,
+                        y * self._tile_size,
+                        (full_width - x) * self._tile_size,
+                        (y + 1) * self._tile_size,
+                    ),
+                )
         for x in range(full_width):
             for y in range(self._border_size[1]):
-                lvl_image.paste(self._graphics[self._border_tile], (x*self._tile_size, y*self._tile_size, (x+1)*self._tile_size, (y+1)*self._tile_size))
-                lvl_image.paste(self._graphics[self._border_tile], (x*self._tile_size, (full_height-y-1)*self._tile_size, (x+1)*self._tile_size, (full_height-y)*self._tile_size))
+                lvl_image.paste(
+                    self._graphics[self._border_tile],
+                    (
+                        x * self._tile_size,
+                        y * self._tile_size,
+                        (x + 1) * self._tile_size,
+                        (y + 1) * self._tile_size,
+                    ),
+                )
+                lvl_image.paste(
+                    self._graphics[self._border_tile],
+                    (
+                        x * self._tile_size,
+                        (full_height - y - 1) * self._tile_size,
+                        (x + 1) * self._tile_size,
+                        (full_height - y) * self._tile_size,
+                    ),
+                )
 
         # Map tiles
         for y in range(len(map)):
             for x in range(len(map[y])):
                 tile_image = self._graphics[map[y][x]]
-                lvl_image.paste(self._graphics[map[y][x]], ((x+self._border_size[0])*self._tile_size, (y+self._border_size[1])*self._tile_size, (x+self._border_size[0]+1)*self._tile_size, (y+self._border_size[1]+1)*self._tile_size), mask=tile_image)
+                lvl_image.paste(
+                    self._graphics[map[y][x]],
+                    (
+                        (x + self._border_size[0]) * self._tile_size,
+                        (y + self._border_size[1]) * self._tile_size,
+                        (x + self._border_size[0] + 1) * self._tile_size,
+                        (y + self._border_size[1] + 1) * self._tile_size,
+                    ),
+                    mask=tile_image,
+                )
 
         # Path, if applicable
         if render_path is not None and self.render_path:
             tile_graphics = self._graphics["path"]
-            for (y, x) in render_path:
-                lvl_image.paste(tile_graphics, ((x + self._border_size[0]) * self._tile_size, (y + self._border_size[1]) * self._tile_size, (x + self._border_size[0] + 1) * self._tile_size, (y + self._border_size[1] + 1) * self._tile_size), mask=tile_graphics)
+            for y, x in render_path:
+                lvl_image.paste(
+                    tile_graphics,
+                    (
+                        (x + self._border_size[0]) * self._tile_size,
+                        (y + self._border_size[1]) * self._tile_size,
+                        (x + self._border_size[0] + 1) * self._tile_size,
+                        (y + self._border_size[1] + 1) * self._tile_size,
+                    ),
+                    mask=tile_graphics,
+                )
             draw = ImageDraw.Draw(lvl_image)
             # font = ImageFont.truetype(<font-file>, <font-size>)
             font_size = 32
@@ -245,11 +337,16 @@ class Problem(ABC):
                 except OSError:
                     font = ImageFont.truetype("SFNSMono.ttf", 32)
             # draw.text((x, y),"Sample Text",(r,g,b))
-            draw.text(((full_width - 1) * self._tile_size / 2, 0),"{}".format(self.path_length),(255,255,255),font=font)
+            draw.text(
+                ((full_width - 1) * self._tile_size / 2, 0),
+                "{}".format(self.path_length),
+                (255, 255, 255),
+                font=font,
+            )
         return lvl_image
 
     def get_episode_over(self, new_stats, old_stats):
-        """ If the generator has reached its targets. (change percentage and max iterations handled in pcgrl_env)"""
+        """If the generator has reached its targets. (change percentage and max iterations handled in pcgrl_env)"""
 
         return False
 

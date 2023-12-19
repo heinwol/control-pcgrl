@@ -16,11 +16,16 @@ from control_pcgrl.envs.probs.problem import Problem
 """
 The base class of all the representations
 """
+
+
 class Representation(ABC):
     """
     The base constructor where all the representation variable are defined with default values
     """
-    def __init__(self, cfg: Config, border_tile_index=1, empty_tile_index=0, wall_tile_index=1):
+
+    def __init__(
+        self, cfg: Config, border_tile_index=1, empty_tile_index=0, wall_tile_index=1
+    ):
         self.cfg = cfg
         # self._map: List[List[int]] = None
         self._map: np.ndarray = None
@@ -47,6 +52,7 @@ class Representation(ABC):
     Returns:
         int: the used seed (same as input if not None)
     """
+
     def seed(self, seed=None):
         self.seed_val = seed
         self._random, seed = seeding.np_random(seed)
@@ -62,6 +68,7 @@ class Representation(ABC):
         height (int): the generated map height
         prob (dict(int,float)): the probability distribution of each tile value
     """
+
     def reset(self, dims: tuple, prob: Problem, next_map: np.ndarray = None):
         self._bordered_map = np.empty(tuple([i + 2 for i in dims]), dtype=int)
         self._bordered_map.fill(self._border_tile_index)
@@ -69,7 +76,9 @@ class Representation(ABC):
             self._map = next_map
             self._old_map = self._map.copy()
         elif self._random_start or self._old_map is None:
-            self._map = type(self).gen_random_map(self._random, dims, prob, self.seed_val)
+            self._map = type(self).gen_random_map(
+                self._random, dims, prob, self.seed_val
+            )
             self._old_map = self._map.copy()
         else:
             self._map = self._old_map.copy()
@@ -81,6 +90,7 @@ class Representation(ABC):
     Parameters:
         random_start (boolean): if the system will restart with a new map or the previous map
     """
+
     def adjust_param(self, cfg: Config):
         self._map_shape = cfg.task.map_shape
 
@@ -95,8 +105,9 @@ class Representation(ABC):
     Returns:
         ActionSpace: the action space used by that representation
     """
+
     def get_action_space(self, dims, num_tiles):
-        raise NotImplementedError('get_action_space is not implemented')
+        raise NotImplementedError("get_action_space is not implemented")
 
     """
     Get the observation space used by the representation
@@ -109,10 +120,15 @@ class Representation(ABC):
     Returns:
         ObservationSpace: the observation space used by that representation
     """
+
     def get_observation_space(self, obs_window, map_shape, num_tiles):
-        return spaces.Dict({
-            "map": spaces.Box(low=0, high=num_tiles-1, dtype=np.uint8, shape=obs_window)
-        })
+        return spaces.Dict(
+            {
+                "map": spaces.Box(
+                    low=0, high=num_tiles - 1, dtype=np.uint8, shape=obs_window
+                )
+            }
+        )
 
     """
     Get the current representation observation object at the current moment
@@ -127,10 +143,9 @@ class Representation(ABC):
     Returns:
         observation: the current observation at the current moment
     """
+
     def get_observation(self):
-        return {
-            "map": self._map.copy()
-        }
+        return {"map": self._map.copy()}
 
     """
     Update the representation with the current action
@@ -141,6 +156,7 @@ class Representation(ABC):
     Returns:
         boolean: True if the action change the map, False if nothing changed
     """
+
     def update(self, action):
         return self._update_bordered_map()
         # raise NotImplementedError('update is not implemented')
@@ -156,12 +172,15 @@ class Representation(ABC):
     Returns:
         img: the modified level image
     """
+
     def render(self, lvl_image, tile_size=16, border_size=None):
         return lvl_image
 
     def _update_bordered_map(self):
         # self._bordered_map[1:-1, 1:-1] = self._map
-        self.unwrapped._bordered_map[tuple([slice(1, -1) for _ in range(len(self._map.shape))])] = self.unwrapped._map
+        self.unwrapped._bordered_map[
+            tuple([slice(1, -1) for _ in range(len(self._map.shape))])
+        ] = self.unwrapped._map
 
     @property
     def unwrapped(self):
@@ -188,7 +207,9 @@ class EgocentricRepresentation(Representation):
         self._pos: np.ndarray = None
 
         # HACK HACK
-        self._render_agent_loc = self.cfg.multiagent.n_agents == 0 and (self.cfg.act_window is None or self.cfg.act_window == [1, 1])
+        self._render_agent_loc = self.cfg.multiagent.n_agents == 0 and (
+            self.cfg.act_window is None or self.cfg.act_window == [1, 1]
+        )
 
     def set_agent_positions(self, agent_positions):
         """Record positions of agents in multi-agent settings."""
@@ -196,7 +217,7 @@ class EgocentricRepresentation(Representation):
 
     def get_valid_agent_coords(self):
         return np.argwhere(np.ones(self._map_shape))
-    
+
     """
     Resets the current representation where it resets the parent and the current
     turtle location
@@ -207,6 +228,7 @@ class EgocentricRepresentation(Representation):
         height (int): the generated map height
         prob (dict(int,float)): the probability distribution of each tile value
     """
+
     def reset(self, dims, prob):
         super().reset(dims, prob)
         # TODO: Remove this?
@@ -215,16 +237,24 @@ class EgocentricRepresentation(Representation):
 
     def get_observation(self):
         obs = super().get_observation()
-        obs.update({
-            'pos': np.array(self._pos),
-        })
+        obs.update(
+            {
+                "pos": np.array(self._pos),
+            }
+        )
         return obs
 
     def get_observation_space(self, obs_window, map_shape, num_tiles):
         obs_space = super().get_observation_space(obs_window, map_shape, num_tiles)
-        obs_space.spaces.update({
-            "pos": spaces.Box(low=np.array([0 for i in map_shape]), high=np.array([i-1 for i in map_shape]), dtype=np.uint8),
-        })
+        obs_space.spaces.update(
+            {
+                "pos": spaces.Box(
+                    low=np.array([0 for i in map_shape]),
+                    high=np.array([i - 1 for i in map_shape]),
+                    dtype=np.uint8,
+                ),
+            }
+        )
         return obs_space
 
     """
@@ -238,6 +268,7 @@ class EgocentricRepresentation(Representation):
     Returns:
         img: the modified level image
     """
+
     def render(self, lvl_image, tile_size=16, border_size=None):
         if self._render_agent_loc:
             y, x = self._pos
@@ -245,6 +276,14 @@ class EgocentricRepresentation(Representation):
             clr = (255, 255, 255, 255)
             im_arr[(0, 1, -1, -2), :, :] = im_arr[:, (0, 1, -1, -2), :] = clr
             x_graphics = Image.fromarray(im_arr)
-            lvl_image.paste(x_graphics, ((x+border_size[0])*tile_size, (y+border_size[1])*tile_size,
-                                            (x+border_size[0]+1)*tile_size,(y+border_size[1]+1)*tile_size), x_graphics)
+            lvl_image.paste(
+                x_graphics,
+                (
+                    (x + border_size[0]) * tile_size,
+                    (y + border_size[1]) * tile_size,
+                    (x + border_size[0] + 1) * tile_size,
+                    (y + border_size[1] + 1) * tile_size,
+                ),
+                x_graphics,
+            )
         return lvl_image

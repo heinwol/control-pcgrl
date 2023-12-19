@@ -17,8 +17,10 @@ class LoderunnerCtrlProblem(LoderunnerProblem):
         super(LoderunnerCtrlProblem, self).__init__()
         # TODO: Do not assume it's a square
         # Twice the optimal zig-zag minus one for the end-point at which the player turns around
-        self._max_path_length = (np.ceil(self._width / 2) * (self._height) + np.floor(self._height / 2)) * 2 - 1
-#       self._max_path_length = np.ceil(self._width / 2 + 1) * (self._height)
+        self._max_path_length = (
+            np.ceil(self._width / 2) * (self._height) + np.floor(self._height / 2)
+        ) * 2 - 1
+        #       self._max_path_length = np.ceil(self._width / 2 + 1) * (self._height)
         # like "_reward_weights" but for use with ParamRew
         self._reward_weights = self._reward_weights
 
@@ -37,7 +39,7 @@ class LoderunnerCtrlProblem(LoderunnerProblem):
         self.cond_bounds = {
             "player": (0, max_n_tile),
             "enemies": (0, max_n_tile),
-#           "gold": (0, max_n_tile),
+            #           "gold": (0, max_n_tile),
             "gold": (0, 10),
             "win": (0, 1),
             "path-length": (0, self._max_path_length),

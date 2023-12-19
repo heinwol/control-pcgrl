@@ -8,6 +8,7 @@ import numpy as np
 from control_pcgrl.envs.helper import get_string_map
 
 from args import parse_args
+
 # from envs import make_vec_envs
 from utils import get_crop_size, get_env_name, get_log_dir
 
@@ -20,32 +21,37 @@ lineType = 2
 
 def infer(game, representation, infer_kwargs, **kwargs):
     """
-     - max_trials: The number of trials per evaluation.
-     - infer_kwargs: Args to pass to the environment.
+    - max_trials: The number of trials per evaluation.
+    - infer_kwargs: Args to pass to the environment.
     """
-    infer_kwargs = {**infer_kwargs, "inference": True, "render": True, "compute_stats": True}
+    infer_kwargs = {
+        **infer_kwargs,
+        "inference": True,
+        "render": True,
+        "compute_stats": True,
+    }
     max_trials = kwargs.get("max_trials", -1)
-#   n = kwargs.get("n", None)
-    exp_id = infer_kwargs.get('exp_id')
+    #   n = kwargs.get("n", None)
+    exp_id = infer_kwargs.get("exp_id")
     map_width = infer_kwargs.get("map_width")
     env_name = get_env_name(game, representation)
     exp_name = get_log_dir(game, representation, **infer_kwargs)
 
-#   if n is None:
-#       if EXPERIMENT_ID is None:
-#           n = max_exp_idx(exp_name)
-#       else:
-#           n = EXPERIMENT_ID
+    #   if n is None:
+    #       if EXPERIMENT_ID is None:
+    #           n = max_exp_idx(exp_name)
+    #       else:
+    #           n = EXPERIMENT_ID
 
-#   if n == 0:
-#       raise Exception(
-#           "Did not find ranked saved model of experiment: {}".format(exp_name)
-#       )
+    #   if n == 0:
+    #       raise Exception(
+    #           "Did not find ranked saved model of experiment: {}".format(exp_name)
+    #       )
     crop_size = infer_kwargs.get("crop_size")
 
     if crop_size == -1:
         infer_kwargs["crop_size"] = get_crop_size(game)
-#   log_dir = "{}/{}_{}_log".format(EXPERIMENT_DIR, exp_name, n)
+    #   log_dir = "{}/{}_{}_log".format(EXPERIMENT_DIR, exp_name, n)
     log_dir = "{}/{}_{}_log".format(EXPERIMENT_DIR, exp_name, exp_id)
     # no log dir, 1 parallel environment
     n_cpu = infer_kwargs.get("n_cpu")
@@ -153,15 +159,15 @@ midep_trgs = opts.midep_trgs
 ca_action = opts.ca_action
 alp_gmm = opts.alp_gmm
 kwargs = {
-    'map_width': opts.map_width,
+    "map_width": opts.map_width,
     # 'change_percentage': 1,
     # 'target_path': 105,
     # 'n': 4, # rank of saved experiment (by default, n is max possible)
 }
 
-#if problem == "sokobangoal":
+# if problem == "sokobangoal":
 #    map_width = 5
-#else:
+# else:
 #    map_width = 16
 
 max_step = opts.max_step

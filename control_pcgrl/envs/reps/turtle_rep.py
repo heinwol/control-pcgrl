@@ -1,5 +1,8 @@
 from pdb import set_trace as TT
-from control_pcgrl.envs.reps.representation import EgocentricRepresentation, Representation
+from control_pcgrl.envs.reps.representation import (
+    EgocentricRepresentation,
+    Representation,
+)
 from PIL import Image
 from gymnasium import spaces
 import numpy as np
@@ -10,11 +13,14 @@ The turtle representation where the agent is trying to modify the position of th
 turtle or the tile value of its current location similar to turtle graphics.
 The difference with narrow representation is the agent now controls the next tile to be modified.
 """
+
+
 class TurtleRepresentation(EgocentricRepresentation):
-    _dirs = [(-1,0), (1,0), (0,-1), (0,1)]
+    _dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)]
     """
     Initialize all the parameters used by that representation
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._wrap = False
@@ -28,6 +34,7 @@ class TurtleRepresentation(EgocentricRepresentation):
         height (int): the generated map height
         prob (dict(int,float)): the probability distribution of each tile value
     """
+
     def reset(self, dims, prob):
         self._pos = self.get_pos_at_step(dims, -1)
         ret = super().reset(dims, prob)
@@ -35,8 +42,9 @@ class TurtleRepresentation(EgocentricRepresentation):
 
         # self._x = self._random.randint(width)
         # self._y = self._random.randint(height)
-#       self._x = 0
-#       self._y = 0
+
+    #       self._x = 0
+    #       self._y = 0
 
     def get_pos_at_step(self, dims, n_step):
         if n_step == -1:
@@ -50,10 +58,11 @@ class TurtleRepresentation(EgocentricRepresentation):
         random_start (boolean): if the system will restart with a new map (true) or the previous map (false)
         wrap (boolean): if the turtle will stop at the edges (false) or warp around the edges (true)
     """
+
     def adjust_param(self, **kwargs):
         super().adjust_param(**kwargs)
-        self._random_start = kwargs.get('random_start', self._random_start)
-        self._wrap = kwargs.get('wrap', self._wrap)
+        self._random_start = kwargs.get("random_start", self._random_start)
+        self._wrap = kwargs.get("wrap", self._wrap)
 
     """
     Gets the action space used by the turtle representation
@@ -67,6 +76,7 @@ class TurtleRepresentation(EgocentricRepresentation):
         Discrete: the action space used by that turtle representation which
         correspond the movement direction and the tile values
     """
+
     def get_action_space(self, dims, num_tiles):
         return spaces.Discrete(len(self._dirs) + num_tiles)
 
@@ -84,6 +94,7 @@ class TurtleRepresentation(EgocentricRepresentation):
     Returns:
         boolean: True if the action change the map, False if nothing changed
     """
+
     def update_pos(self, action, pos):
         change = 0
         if action < len(self._dirs):
@@ -132,4 +143,3 @@ class TurtleRepresentation(EgocentricRepresentation):
     #     lvl_image.paste(x_graphics, ((self._x+border_size[0])*tile_size, (self._y+border_size[1])*tile_size,
     #                                     (self._x+border_size[0]+1)*tile_size,(self._y+border_size[1]+1)*tile_size), x_graphics)
     #     return lvl_image
-

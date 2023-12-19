@@ -13,16 +13,17 @@ from control_pcgrl.rl.utils import validate_config
 batch_size = 64
 n_train_iters = 10000
 
+
 @hydra.main(config_path="control_pcgrl/configs", config_name="config")
 def main(cfg: Config):
-    """Train a model to predict relevant metrics in a PCGRL env. Generate data with random actions 
+    """Train a model to predict relevant metrics in a PCGRL env. Generate data with random actions
     (i.e. random map edits).
     """
     if not validate_config(cfg):
         print("Invalid config!")
         return
 
-    log_dir = 'logs_reward_model'
+    log_dir = "logs_reward_model"
     log_dir = os.path.join(hydra.utils.get_original_cwd(), log_dir)
 
     if not os.path.exists(log_dir):

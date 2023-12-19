@@ -11,10 +11,13 @@ import control_pcgrl
 from control_pcgrl.envs.helper import get_string_map
 
 # shape = (height, width, length)
-maze = np.array([[0, 0],
-                 [0, 0],
-                 [0, 1],])
-
+maze = np.array(
+    [
+        [0, 0],
+        [0, 0],
+        [0, 1],
+    ]
+)
 
 
 # FIXME: why does this seem to take so god damn long? Path-finding is fast. Just creating the environment itself?

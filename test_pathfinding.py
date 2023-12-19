@@ -19,35 +19,41 @@ def get_graph(arr, passable="empty"):
         ux, uy = u // width, u % width
         if arr[ux, uy] != passable:
             continue
-        neighbs_xy = [(ux - 1, uy), (ux, uy-1), (ux+1, uy), (ux, uy+1)]
+        neighbs_xy = [(ux - 1, uy), (ux, uy - 1), (ux + 1, uy), (ux, uy + 1)]
         neighbs = [x * width + y for x, y in neighbs_xy]
         for v, (vx, vy) in zip(neighbs, neighbs_xy):
-            if not 0 <= v < size or not ((0 <= vx < width) and (0 <= vy < height)) or arr[vx, vy] != passable:
+            if (
+                not 0 <= v < size
+                or not ((0 <= vx < width) and (0 <= vy < height))
+                or arr[vx, vy] != passable
+            ):
                 continue
             graph.add_edge(u, v)
     return graph
 
 
 if __name__ == "__main__":
-    problem = 'binary_ctrl'
-    representation = 'narrow'
+    problem = "binary_ctrl"
+    representation = "narrow"
     env_name = get_env_name(problem, representation)
     cfg_dict = {
-        'crop_size': 32,
-        'map_width': 16,
-        'max_step': 400,
-        'problem': problem,
-        'conditionals': [],
-        'evaluate': False,
-        'alp_gmm': False,
-        'representation': representation,
-        'env_name': env_name,
+        "crop_size": 32,
+        "map_width": 16,
+        "max_step": 400,
+        "problem": problem,
+        "conditionals": [],
+        "evaluate": False,
+        "alp_gmm": False,
+        "representation": representation,
+        "env_name": env_name,
     }
     env = make_env(cfg_dict)
     env.reset()
     env.render()
 
-    str_map = env.get_string_map(env.unwrapped._rep._map, env.unwrapped._prob.get_tile_types())
+    str_map = env.get_string_map(
+        env.unwrapped._rep._map, env.unwrapped._prob.get_tile_types()
+    )
     start_time = timer()
     for _ in range(1000):
         str_map = np.array(str_map)
@@ -66,5 +72,7 @@ if __name__ == "__main__":
     map_locations = get_tile_locations(str_map, env.unwrapped._prob.get_tile_types())
     start_time = timer()
     for _ in range(1000):
-        path_length, path_coords = calc_longest_path(str_map, map_locations, ["empty"], get_path=env.unwrapped._prob.render_path)
+        path_length, path_coords = calc_longest_path(
+            str_map, map_locations, ["empty"], get_path=env.unwrapped._prob.render_path
+        )
     print("Time taken: {}".format(timer() - start_time))

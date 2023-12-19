@@ -17,28 +17,36 @@ import torch as th
 #         done = np.any(self.num_timesteps > old_num_timesteps)
 #         return done
 
+
 def ControllableTrainerFactory(trainer_cls):
     # if isinstance(trainer, str):
-    if trainer_cls.lower() == 'ppo':
+    if trainer_cls.lower() == "ppo":
         trainer_cls = RlLibPPOTrainer
-    elif trainer_cls == 'QMIX':
+    elif trainer_cls == "QMIX":
         trainer_cls = RlLibQMIXTrainer
     else:
         raise ValueError(
-            'Unsupported trainer type. ' + \
-            'Acceptable arguments are {PPO, QMIX}. '+ \
-            'For custom trainers, pass a trainer object as a parameter')
+            "Unsupported trainer type. "
+            + "Acceptable arguments are {PPO, QMIX}. "
+            + "For custom trainers, pass a trainer object as a parameter"
+        )
 
     """
     Wrap trainer object with extra logging and custom metric checkpointing
     """
+
     class Trainer(trainer_cls):
-        log_keys = ['episode_reward_max', 'episode_reward_mean', 'episode_reward_min', 'episode_len_mean']
+        log_keys = [
+            "episode_reward_max",
+            "episode_reward_mean",
+            "episode_reward_min",
+            "episode_len_mean",
+        ]
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             # wandb.init(**self.config['wandb'])
-            self.ctrl_metrics = self.config['env_config']['controls']
+            self.ctrl_metrics = self.config["env_config"]["controls"]
             self.ctrl_metrics = {} if self.ctrl_metrics is None else self.ctrl_metrics
             # cbs = self.workers.foreach_env(lambda env: env._unwrapped.cond_bounds if hasattr(env, '_unwrapped') else env.unwrapped.cond_bounds)
             # cbs = [cb for worker_cbs in cbs for cb in worker_cbs if cb is not None]
@@ -47,46 +55,59 @@ def ControllableTrainerFactory(trainer_cls):
             self.train_reward_model = False
 
         def setup(self, config):
-            #import pdb; pdb.set_trace()
-            #config['replay_buffer_config'] = {'type': 'ReplayBuffer'}
+            # import pdb; pdb.set_trace()
+            # config['replay_buffer_config'] = {'type': 'ReplayBuffer'}
             ret = super().setup(config)
             n_params = 0
-            #agent_id = config['multiagent']
-            multiagent = config.get('multiagent', None)
+            # agent_id = config['multiagent']
+            multiagent = config.get("multiagent", None)
             if multiagent is None:
-                sample_agent_id = 'default_policy'
+                sample_agent_id = "default_policy"
             else:
-                sample_agent_id = list(multiagent['policies'].keys())[0]
-            self.train_reward_model = config.env_config['train_reward_model']
+                sample_agent_id = list(multiagent["policies"].keys())[0]
+            self.train_reward_model = config.env_config["train_reward_model"]
 
             if self.train_reward_model:
                 local_env = self.workers.local_worker().env
-                self.reward_model, self.reward_model_optimizer = init_reward_model(env=local_env)
+                self.reward_model, self.reward_model_optimizer = init_reward_model(
+                    env=local_env
+                )
 
             param_dict = self.get_weights()[sample_agent_id]
 
             # DOES NOT WORK FOR QMIX MODEL
             for v in param_dict.values():
-               n_params += np.prod(v.shape)
+                n_params += np.prod(v.shape)
             model = self.get_policy(sample_agent_id).model
-            print(f'default_policy has {n_params} parameters.')
-            print('Model overview(s):')
+            print(f"default_policy has {n_params} parameters.")
+            print("Model overview(s):")
             print(model)
             print("=============")
             # torchinfo summaries are very confusing at the moment
-            torchinfo.summary(model, input_data={
-               "input_dict": {"obs": th.zeros((1, *self.config['model']['custom_model_config']['dummy_env_obs_space'].shape))}},
-               device='cuda' if config.env_config['hardware']['n_gpu'] > 0 else 'cpu',
+            torchinfo.summary(
+                model,
+                input_data={
+                    "input_dict": {
+                        "obs": th.zeros(
+                            (
+                                1,
+                                *self.config["model"]["custom_model_config"][
+                                    "dummy_env_obs_space"
+                                ].shape,
+                            )
+                        )
+                    }
+                },
+                device="cuda" if config.env_config["hardware"]["n_gpu"] > 0 else "cpu",
             )
             return ret
-
 
         # @classmethod
         # def get_default_config(cls):
         #     # def_cfg = super().get_default_config()
         #     def_cfg = trainer_cls.get_default_config()
-        #     # def_cfg.update_from_dict({             # note: for ray earlier than 2.1.0, def_cfg is a dictionary, please use def_cfg.update(); 
-        #     #                                 #    for ray starting from 2.2.0, def_cfg is a ray config, please use def_cfg.update_from_dict() instead.                                             
+        #     # def_cfg.update_from_dict({             # note: for ray earlier than 2.1.0, def_cfg is a dictionary, please use def_cfg.update();
+        #     #                                 #    for ray starting from 2.2.0, def_cfg is a ray config, please use def_cfg.update_from_dict() instead.
         #     #     # 'checkpoint_path_file': None,
         #     #     'wandb': {
         #     #         'project': 'PCGRL',
@@ -106,19 +127,25 @@ def ControllableTrainerFactory(trainer_cls):
         def train(self, *args, **kwargs):
             result = super().train(*args, **kwargs)
             log_result = {k: v for k, v in result.items() if k in self.log_keys}
-            log_result['info: learner:'] = result['info']['learner']
+            log_result["info: learner:"] = result["info"]["learner"]
 
             # Either doing multi-agent...
-            if 'num_agent_steps_sampled_this_iter' in result:
-                result['fps'] = result['num_agent_steps_trained_this_iter'] / result['time_this_iter_s']
+            if "num_agent_steps_sampled_this_iter" in result:
+                result["fps"] = (
+                    result["num_agent_steps_trained_this_iter"]
+                    / result["time_this_iter_s"]
+                )
             # or single-agent.
             else:
-                result['fps'] = result['num_env_steps_trained_this_iter'] / result['time_this_iter_s']
+                result["fps"] = (
+                    result["num_env_steps_trained_this_iter"]
+                    / result["time_this_iter_s"]
+                )
 
             # TODO: Send a heatmap to tb/wandb representing success reaching various control targets?
-            if len(result['custom_metrics']) > 0:
+            if len(result["custom_metrics"]) > 0:
                 n_bins = 20
-                result['custom_plots'] = {}
+                result["custom_plots"] = {}
                 for metric in self.ctrl_metrics:
                     # Scatter plots via wandb
                     # trgs = result['hist_stats'][f'{metric}-trg']
@@ -133,13 +160,19 @@ def ControllableTrainerFactory(trainer_cls):
                     # Spoofed histograms
                     # FIXME: weird interpolation behavior here???
                     if self.metric_ranges is None:
-                        cond_bounds = self.workers.local_worker().env.unwrapped.cond_bounds
-                        self.metric_ranges = {k: v[1] - v[0] for k, v in cond_bounds.items()}
-                    bin_size = self.metric_ranges[metric] / n_bins  # 30 is the default number of tensorboard histogram bins (HACK)
+                        cond_bounds = (
+                            self.workers.local_worker().env.unwrapped.cond_bounds
+                        )
+                        self.metric_ranges = {
+                            k: v[1] - v[0] for k, v in cond_bounds.items()
+                        }
+                    bin_size = (
+                        self.metric_ranges[metric] / n_bins
+                    )  # 30 is the default number of tensorboard histogram bins (HACK)
                     trg_dict = {}
 
-                    for i, trg in enumerate(result['hist_stats'][f'{metric}-trg']):
-                        val = result['hist_stats'][f'{metric}-val'][i]
+                    for i, trg in enumerate(result["hist_stats"][f"{metric}-trg"]):
+                        val = result["hist_stats"][f"{metric}-val"][i]
                         scc = 1 - abs(val - trg) / self.metric_ranges[metric]
                         trg_bin = trg // bin_size
                         if trg not in trg_dict:
@@ -149,31 +182,34 @@ def ControllableTrainerFactory(trainer_cls):
                     # Get average success rate in meeting each target.
                     trg_dict = {k: np.mean(v) for k, v in trg_dict.items()}
                     # Repeat each target based on how successful we were in reaching it. (Appears at least once if sampled)
-                    spoof_data = [[trg * bin_size] * (1 + int(20 * scc)) for trg, scc in trg_dict.items()]
-                    spoof_data = [e for ee in spoof_data for e in ee]  # flatten the list
-                    result['hist_stats'][f'{metric}-scc'] = spoof_data
+                    spoof_data = [
+                        [trg * bin_size] * (1 + int(20 * scc))
+                        for trg, scc in trg_dict.items()
+                    ]
+                    spoof_data = [
+                        e for ee in spoof_data for e in ee
+                    ]  # flatten the list
+                    result["hist_stats"][f"{metric}-scc"] = spoof_data
 
-                   # Make a heatmap.
-                   # ax, fig = plt.subplots(figsize=(10, 10))
-                   # data = np.zeros(n_bins)
-                   # for trg, scc in trg_dict.items():
-                       # data[trg] = scc
-                   # wandb.log({f'{metric}-scc': wandb.Histogram(data, n_bins=n_bins)})
+                # Make a heatmap.
+                # ax, fig = plt.subplots(figsize=(10, 10))
+                # data = np.zeros(n_bins)
+                # for trg, scc in trg_dict.items():
+                # data[trg] = scc
+                # wandb.log({f'{metric}-scc': wandb.Histogram(data, n_bins=n_bins)})
 
-                   # plt.imshow(data, cmap='hot')
-                   # plt.savefig(f'{metric}.png')
-
-                
+                # plt.imshow(data, cmap='hot')
+                # plt.savefig(f'{metric}.png')
 
             # for k, v in result['hist_stats'].items():
-                # if '-trg' in k or '-val' in k:
-                    # result['custom_metrics'][k] = [v]
+            # if '-trg' in k or '-val' in k:
+            # result['custom_metrics'][k] = [v]
 
             # print('-----------------------------------------')
             # print(pretty_print(log_result))
 
             if self.train_reward_model:
-                # TODO: Collect datapoints from (wrapped) environments and train the reward model (see 
+                # TODO: Collect datapoints from (wrapped) environments and train the reward model (see
                 # `train_reward_model.py` in root directory)
                 pass
 

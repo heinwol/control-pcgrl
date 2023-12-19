@@ -10,7 +10,10 @@ from control_pcgrl.envs.probs.problem import Problem3D
 import numpy as np
 from ray.rllib import MultiAgentEnv
 
-from control_pcgrl.envs.reps.wrappers import ShowAgentRepresentation, StaticTileRepresentation
+from control_pcgrl.envs.reps.wrappers import (
+    ShowAgentRepresentation,
+    StaticTileRepresentation,
+)
 
 
 # clean the input action
@@ -22,35 +25,39 @@ def get_action(a):
 
 class AuxTiles(gym.Wrapper):
     """Let the generator write to and observe additional, "invisible" channels."""
+
     def __init__(self, game, n_aux_tiles, cfg: Config):
         self.n_aux_tiles = n_aux_tiles
         self.env = game
         super().__init__(self.env)
-        map_obs_space = self.env.observation_space.spaces['map']
-        self.env.observation_space.spaces['aux'] =spaces.Box(
+        map_obs_space = self.env.observation_space.spaces["map"]
+        self.env.observation_space.spaces["aux"] = spaces.Box(
             shape=(*map_obs_space.shape[:-1], n_aux_tiles),
-            low = 0,
-            high = 1,
+            low=0,
+            high=1,
             dtype=np.float32,
         )
         self.action_space = spaces.Dict(
-            action=self.env.action_space, 
+            action=self.env.action_space,
             aux=spaces.Box(low=0, high=1, shape=(n_aux_tiles,), dtype=np.float32),
         )
 
     def reset(self, *, seed=None, options=None):
         obs, info = self.env.reset()
-        self._pos = obs['pos']
-        aux = np.zeros((*self.env.observation_space.spaces['map'].shape[:-1], self.n_aux_tiles), dtype=np.float32)
-        obs['aux'] = aux
+        self._pos = obs["pos"]
+        aux = np.zeros(
+            (*self.env.observation_space.spaces["map"].shape[:-1], self.n_aux_tiles),
+            dtype=np.float32,
+        )
+        obs["aux"] = aux
         self.aux_map = aux
         return obs, info
 
     def step(self, action):
-        self._write_to_aux(self._pos, action['aux'])
-        obs, reward, done, truncated, info = self.env.step(action['action'])
-        self._pos = obs['pos']
-        obs['aux'] = self.aux_map
+        self._write_to_aux(self._pos, action["aux"])
+        obs, reward, done, truncated, info = self.env.step(action["action"])
+        self._pos = obs["pos"]
+        obs["aux"] = self.aux_map
         return obs, reward, done, truncated, info
 
     def _write_to_aux(self, pos, aux):
@@ -59,6 +66,7 @@ class AuxTiles(gym.Wrapper):
 
 class TransformObs(gym.Wrapper):
     """Lil' hack to transform nested observation dicts when dealing with multi-agent environments."""
+
     def __init__(self, cfg: Config):
         super().__init__(self.env)
         n_agents = cfg.multiagent.n_agents
@@ -80,6 +88,7 @@ class ToImage(TransformObs):
 
     Can be stacked as Last Layer
     """
+
     def __init__(self, game, names, cfg: Config):
         if isinstance(game, str):
             self.env = gym.make(game)
@@ -99,8 +108,11 @@ class ToImage(TransformObs):
             if self.shape is None:
                 self.shape = self.env.observation_space.spaces[n].shape
             new_shape = self.env.observation_space.spaces[n].shape
-            if (issubclass(type(self.unwrapped._prob), Problem3D) and len(new_shape) == 3 
-                    or len(new_shape) <= 2):  # here we assume the problem is 2D if not 3D
+            if (
+                issubclass(type(self.unwrapped._prob), Problem3D)
+                and len(new_shape) == 3
+                or len(new_shape) <= 2
+            ):  # here we assume the problem is 2D if not 3D
                 depth += 1
                 n_cat_dims = len(new_shape)
             else:
@@ -121,7 +133,6 @@ class ToImage(TransformObs):
         self.observation_space = spaces.Box(
             low=0, high=max_value, shape=(*self.shape[:-1], depth)
         )
-
 
     def step(self, action, **kwargs):
         if not isinstance(action, dict):
@@ -144,10 +155,9 @@ class ToImage(TransformObs):
             if len(final.shape) == 0:
                 final = obs[n].reshape(*self.shape[:-1], -1)
             else:
-                final = np.append(
-                    final, obs[n].reshape(*self.shape[:-1], -1), axis=-1
-                )
+                final = np.append(final, obs[n].reshape(*self.shape[:-1], -1), axis=-1)
         return final
+
 
 class ToImageCA(ToImage):
     def __init__(self, game, name, cfg: Config):
@@ -170,10 +180,11 @@ class OneHotEncoding(TransformObs):
     Transform any object in the dictionary to one hot encoding
     can be stacked
     """
+
     def __init__(self, game, name, cfg: Config, padded: bool = False):
         """
         Args:
-            padded (bool): if True, the observation we are receiving from the wrapper below us has `0s` to represent 
+            padded (bool): if True, the observation we are receiving from the wrapper below us has `0s` to represent
                 padded tiles.
         """
         assert name == "map", "Onehot only supported for the map representation."
@@ -195,7 +206,7 @@ class OneHotEncoding(TransformObs):
 
         self.observation_space = gym.spaces.Dict({})
 
-        for (k, s) in self.env.observation_space.spaces.items():
+        for k, s in self.env.observation_space.spaces.items():
             self.observation_space.spaces[k] = s
         new_shape = []
         shape = self.env.observation_space.spaces[self.name].shape
@@ -252,12 +263,12 @@ class OneHotEncoding(TransformObs):
         #     new = np.concatenate((new, named_obs[:, :, -1][:, :, None]), axis=-1)
 
         obs[self.name] = new
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         return obs
 
     def get_one_hot_map(self):
-        obs = {'map': self.env._rep._map}
+        obs = {"map": self.env._rep._map}
         return self.transform(obs)
 
 
@@ -265,6 +276,7 @@ class ActionMap(gym.Wrapper):
     """
     Transform the action input space to a 3D map of values where the argmax value will be applied. Can be stacked.
     """
+
     def __init__(self, game, cfg: Config, bordered_observation=False):
         if isinstance(game, str):
             self.env = gym.make(game)
@@ -339,7 +351,10 @@ class Cropped(TransformObs):
     The crop size can be larger than the actual view, it just pads the outside
     This wrapper only works on games with a position coordinate can be stacked
     """
-    def __init__(self, game, obs_window: Iterable, pad_value: int, name: str, cfg: Config):
+
+    def __init__(
+        self, game, obs_window: Iterable, pad_value: int, name: str, cfg: Config
+    ):
         if isinstance(game, str):
             self.env = gym.make(game)
         else:
@@ -353,9 +368,10 @@ class Cropped(TransformObs):
         assert (
             name in self.env.observation_space.spaces.keys()
         ), "This wrapper only works if you have a {} key".format(name)
-        assert (
-            len(self.env.observation_space.spaces[name].shape) in [2, 3]
-        ), "This wrapper only works on 2D or 3D arrays."
+        assert len(self.env.observation_space.spaces[name].shape) in [
+            2,
+            3,
+        ], "This wrapper only works on 2D or 3D arrays."
         self.name = name
         # self.show_agents = cfg.show_agents
         self.set_pad_size(cfg)
@@ -363,12 +379,12 @@ class Cropped(TransformObs):
         obs_shape = tuple(self.obs_window)
         self.obs_shape = obs_shape
 
-        #self.pad = crop_shape // 2
+        # self.pad = crop_shape // 2
         # self.pad_value = pad_value
 
         self.observation_space = gym.spaces.Dict({})
 
-        for (k, s) in self.env.observation_space.spaces.items():
+        for k, s in self.env.observation_space.spaces.items():
             self.observation_space.spaces[k] = s
 
         low_value = self.observation_space[name].low.min()
@@ -405,9 +421,9 @@ class Cropped(TransformObs):
         return obs, info
 
     def _transform(self, obs):
-        map = obs[self.name] 
+        map = obs[self.name]
 
-        if self.name == 'map':
+        if self.name == "map":
             # FIXME: Instead of this hack, just include an out-of-bounds tile by default in all problems?
             # HACK: For the map observation only (or more generally, onehot observations... TODO), represent out-of bounds tiles
             # as a separate discrete value (which will be sliced off in conversion to onehot)
@@ -415,19 +431,30 @@ class Cropped(TransformObs):
             map = map + 1
 
         # x, y = obs["pos"]
-        pos = obs['pos']
+        pos = obs["pos"]
 
         # If crop shape is greater than map shape, pad the map
         # View Padding
-        padded = np.pad(map, self.pad, constant_values=0)  # Denote out-of-bounds tiles as 0.
+        padded = np.pad(
+            map, self.pad, constant_values=0
+        )  # Denote out-of-bounds tiles as 0.
 
         # Compensate for the bottom-left padding.
         # View Centering
         # cropped = padded[tuple([slice(p, p + self.shape[i]) for i, p in enumerate(pos)])]
 
         # Crop the map
-        cropped = padded[tuple([slice(p + self.pad[i][0] - self.obs_window[i] // 2, 
-                                    p + self.pad[i][0] + math.ceil(self.obs_window[i] / 2)) for i, p in enumerate(pos)])]
+        cropped = padded[
+            tuple(
+                [
+                    slice(
+                        p + self.pad[i][0] - self.obs_window[i] // 2,
+                        p + self.pad[i][0] + math.ceil(self.obs_window[i] / 2),
+                    )
+                    for i, p in enumerate(pos)
+                ]
+            )
+        ]
         # if self.name == ShowAgentRepresentation.show_agents_obs_name:
         #     breakpoint()
         assert np.all(cropped.shape == self.obs_window)
@@ -444,30 +471,39 @@ class CroppedImagePCGRLWrapper(gym.Wrapper):
     """
     The wrappers we use for narrow and turtle experiments
     """
+
     def __init__(self, game, cfg: Config):
         env: PcgrlEnv = gym.make(game, cfg=cfg)
         env.adjust_param(cfg)
 
         # Keys of (box) observation spaces to be concatenated (channel-wise)
         flat_indices = ["map"]
-        flat_indices += [StaticTileRepresentation.static_builds_obs_name] if cfg.static_tile_wrapper else []
-        flat_indices += [ShowAgentRepresentation.show_agents_obs_name] if cfg.show_agents else []
+        flat_indices += (
+            [StaticTileRepresentation.static_builds_obs_name]
+            if cfg.static_tile_wrapper
+            else []
+        )
+        flat_indices += (
+            [ShowAgentRepresentation.show_agents_obs_name] if cfg.show_agents else []
+        )
 
         # Cropping map, etc. to the correct crop_size
         for k in flat_indices:
             env = Cropped(
-                game=env, obs_window=cfg.task.obs_window, pad_value=env.get_border_tile(), name=k, 
+                game=env,
+                obs_window=cfg.task.obs_window,
+                pad_value=env.get_border_tile(),
+                name=k,
                 cfg=cfg,
             )
-            
+
         # Transform the map to a one hot encoding
         # for k in flat_indices:
-        env = OneHotEncoding(env, 'map', padded=True, cfg=cfg)
+        env = OneHotEncoding(env, "map", padded=True, cfg=cfg)
 
         if cfg.n_aux_tiles > 0:
             flat_indices += ["aux"]
             env = AuxTiles(env, n_aux_tiles=cfg.n_aux_tiles, cfg=cfg)
-        
 
         # Final Wrapper has to be ToImage or ToFljat
         env = ToImage(env, flat_indices, cfg=cfg)
@@ -483,7 +519,7 @@ class CroppedImagePCGRLWrapper(gym.Wrapper):
 #         # Cropping the map to the correct crop_size
 #         env = Cropped(self.pcgrl_env, crop_size, self.pcgrl_env.get_border_tile(), 'map', **kwargs)
 #         env = OneHotEncoding(env, 'map', padded=True, **kwargs)
-        
+
 #         # Now we one hot encode the observation for all probs including the binary
 #         # Indices for flatting
 #         flat_indices = ['map']
@@ -499,6 +535,8 @@ class CroppedImagePCGRLWrapper(gym.Wrapper):
 Similar to the previous wrapper but the input now is the index in a 3D map (height, width, num_tiles) of the highest value
 Used for wide experiments
 """
+
+
 class ActionMapImagePCGRLWrapper(gym.Wrapper):
     def __init__(self, game, cfg: Config):
         self.pcgrl_env = gym.make(game, cfg=cfg)
@@ -525,20 +563,21 @@ class ActionMapImagePCGRLWrapper(gym.Wrapper):
             self.env = ToImage(env, flat_indices, cfg=cfg)
         gym.Wrapper.__init__(self, self.env)
 
+
 # This precedes the ParamRew wrapper so we only worry about the map as observation
 class CAactionWrapper(gym.Wrapper):
     def __init__(self, game, cfg: Config):
         self.pcgrl_env = gym.make(game)
         self.pcgrl_env.adjust_param(cfg)
         # Indices for flattening
-        flat_indices = ['map']
+        flat_indices = ["map"]
         env = self.pcgrl_env
         # Add the action map wrapper
         env = CAMap(env, cfg)
         # Transform to one hot encoding if not binary
         # if 'binary' not in game:
-            # ) or ('minecraft_2Dmaze' not in game)
-        env = OneHotEncoding(env, 'map', padded=False, cfg=cfg)
+        # ) or ('minecraft_2Dmaze' not in game)
+        env = OneHotEncoding(env, "map", padded=False, cfg=cfg)
         # Final Wrapper has to be ToImage or ToFlat
         self.env = ToImageCA(env, flat_indices, cfg=cfg)
         gym.Wrapper.__init__(self, self.env)
@@ -549,7 +588,7 @@ class ActionMap3DImagePCGRLWrapper(gym.Wrapper):
         self.pcgrl_env = gym.make(game)
         self.pcgrl_env.adjust_param(cfg)
         # Indices for flattening
-        flat_indices = ['map']
+        flat_indices = ["map"]
         env = self.pcgrl_env
         width = env._prob._width
         height = env._prob._height
@@ -560,20 +599,22 @@ class ActionMap3DImagePCGRLWrapper(gym.Wrapper):
         # Transform to one hot encoding if not binary
 
         # we need the observation to be one-hot, so we can reliably separate map from control observations for NCA skip connection
-        env = OneHotEncoding(env, 'map', padded=False)
+        env = OneHotEncoding(env, "map", padded=False)
         # Final Wrapper has to be ToImage or ToFlat
         self.env = ToImage(env, flat_indices)
         gym.Wrapper.__init__(self, self.env)
         # NOTE: check this insanity out so cool
         # self.action_space = self.pcgrl_env.action_space = gym.spaces.MultiDiscrete([self.env.dim] * width * height * length)
-        self.action_space = self.unwrapped.action_space = gym.spaces.Discrete(self.env.dim * width * height * length)
+        self.action_space = self.unwrapped.action_space = gym.spaces.Discrete(
+            self.env.dim * width * height * length
+        )
         #       self.action_space = self.pcgrl_env.action_space = gym.spaces.Box(low=0, high=1, shape=(self.n_tile_types* width* height,))
         self.last_action = None
         self.INFER = cfg.infer
 
     def step(self, action, **kwargs):
         """
-        :param action: (int) the unravelled index of the action. We will re-ravel to get spatial (x, y, z) coordinates, 
+        :param action: (int) the unravelled index of the action. We will re-ravel to get spatial (x, y, z) coordinates,
                       and action type.
         """
         action = np.unravel_index(action, (self.observation_space.shape))
@@ -661,31 +702,33 @@ class RCTWrapper(gym.Wrapper):
 
 # TODO
 
+
 def disable_passive_env_checker(env):
     # remove the passive environment checker wrapper from the env attribute of an env
     # base case -> the environment is not a wrapper
-    if not hasattr(env, 'env'):
+    if not hasattr(env, "env"):
         return env
 
     root = env
-    prev = env 
-    while hasattr(prev, 'env'):
+    prev = env
+    while hasattr(prev, "env"):
         next_ = prev.env
         if isinstance(next_, gym.wrappers.env_checker.PassiveEnvChecker):
             prev.env = next_.env
         prev = next_
-            
+
     return root
+
 
 """
 gym wrappers do not allow for consistent seeding
 add a seed method to each wrapper
 """
-#def seedify(env):
+# def seedify(env):
 #    def seed(self, s):
 #        print(self)
 #        return self.env.seed(s)
-#    
+#
 #    root = env
 #    curr = env
 #    while hasattr(curr, 'env'):
@@ -697,19 +740,21 @@ add a seed method to each wrapper
 class MultiAgentWrapper(gym.Wrapper, MultiAgentEnv):
     def __init__(self, game, cfg: Config):
         # multiagent_args = kwargs.get('multiagent')
-        self.env = disable_passive_env_checker(game) # DISABLE GYM PASSIVE ENVIRONMENT CHECKER
+        self.env = disable_passive_env_checker(
+            game
+        )  # DISABLE GYM PASSIVE ENVIRONMENT CHECKER
         gym.Wrapper.__init__(self, self.env)
         MultiAgentEnv.__init__(self.env)
         self.n_agents = cfg.multiagent.n_agents
         # try:
-            # self.n_agents = multiagent_args.get('n_agents', 2)
+        # self.n_agents = multiagent_args.get('n_agents', 2)
         # except AttributeError:
         #     self.n_agents = json.loads(multiagent_args.replace('\'', '\"'))['n_agents']
         self.observation_space = gym.spaces.Dict({})
         self.action_space = gym.spaces.Dict({})
         for i in range(self.n_agents):
-            self.observation_space.spaces[f'agent_{i}'] = self.env.observation_space
-            self.action_space.spaces[f'agent_{i}'] = self.env.action_space
+            self.observation_space.spaces[f"agent_{i}"] = self.env.observation_space
+            self.action_space.spaces[f"agent_{i}"] = self.env.action_space
         # otherwise gym utils throws an error???
         self.unwrapped.observation_space = self.observation_space
         self.unwrapped.action_space = self.action_space
@@ -730,8 +775,8 @@ class MultiAgentWrapper(gym.Wrapper, MultiAgentEnv):
             self.unwrapped._rep.set_active_agent(k)
             obs_k, rew[k], done[k], truncated[k], info[k] = super().step(action={k: v})
             obs.update(obs_k)
-        truncated['__all__'] = np.all(list(truncated.values()))
-        done['__all__'] = np.all(list(done.values()))
+        truncated["__all__"] = np.all(list(truncated.values()))
+        done["__all__"] = np.all(list(done.values()))
 
         return obs, rew, done, truncated, info
 
@@ -739,13 +784,13 @@ class MultiAgentWrapper(gym.Wrapper, MultiAgentEnv):
 class GroupedEnvironmentWrapper(MultiAgentEnv):
     def __init__(self, env, cfg: Config):
         MultiAgentEnv.__init__(self)
-        #gym.Wrapper.__init__(self, env.env)
+        # gym.Wrapper.__init__(self, env.env)
         self.env = env
         self.groups = self.env.groups
         self.agent_id_to_group = self.env.agent_id_to_group
         self._unwrapped = self.env.env.unwrapped
-        #super().__init__(env) # inherit the attributes of the base environment
-        #self.env = env
+        # super().__init__(env) # inherit the attributes of the base environment
+        # self.env = env
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
         self.ctrl_metrics = self.env.env.ctrl_metrics
@@ -759,9 +804,6 @@ class GroupedEnvironmentWrapper(MultiAgentEnv):
 
     def _ungroup_items(self, items):
         return self.env._ungroup_items(items)
-    
+
     def _group_items(self, items):
         return self.env._group_items(items)
-
-
-

@@ -7,8 +7,10 @@ import torch as th
 from control_pcgrl.configs.config import Config
 from control_pcgrl.envs.pcgrl_env import PcgrlEnv
 
+
 class RewardModelWrapper(gym.Wrapper):
     """Wrap a PCGRL env so that when actions are taken, we collect datapoints for training a reward model."""
+
     def __init__(self, env, cfg):
         self.env = env
         super().__init__(env)
@@ -80,7 +82,11 @@ class RewardModel(th.nn.Module):
 def init_reward_model(env: PcgrlEnv):
     """Initialize a reward model and optimizer."""
     r_model_obs_shape = env.get_map_dims()
-    r_model_obs_shape = (r_model_obs_shape[2], r_model_obs_shape[0], r_model_obs_shape[1])
+    r_model_obs_shape = (
+        r_model_obs_shape[2],
+        r_model_obs_shape[0],
+        r_model_obs_shape[1],
+    )
     n_in_chan = r_model_obs_shape[-1]
     r_model_obs_size = np.prod(r_model_obs_shape)
     r_model_out_size = len(env.metrics)
@@ -89,12 +95,13 @@ def init_reward_model(env: PcgrlEnv):
     optimizer = th.optim.Adam(reward_model.parameters(), lr=1e-4)
     return reward_model, optimizer
 
+
 def train_reward_model(reward_model, optimizer, feats, metrics):
     """Train a reward model on one batch."""
     # Compute the loss
     loss = 0
     # feats = feats.view(feats.shape[0], -1)
-    feats = rearrange(feats, 'b h w c -> b c h w')
+    feats = rearrange(feats, "b h w c -> b c h w")
     pred = reward_model(feats.float())
     loss += th.nn.functional.mse_loss(pred, metrics.float())
     # Backprop

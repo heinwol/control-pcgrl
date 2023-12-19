@@ -5,9 +5,16 @@ import numpy as np
 import gymnasium as gym
 import control_pcgrl
 from pdb import set_trace as TT
+
 # from utils import make_vec_envs
-from control_pcgrl.envs.helper_3D import calc_num_regions, debug_path, get_string_map,\
-                                        get_tile_locations, calc_longest_path, run_dijkstra
+from control_pcgrl.envs.helper_3D import (
+    calc_num_regions,
+    debug_path,
+    get_string_map,
+    get_tile_locations,
+    calc_longest_path,
+    run_dijkstra,
+)
 import matplotlib.pyplot as plt
 
 ################################################################################
@@ -15,64 +22,64 @@ import matplotlib.pyplot as plt
 tile_types = ["AIR", "DIRT"]
 
 ######## Test the path finding func and region counting func in stairing logic #########
-# Note: the path length is calculated by the dijkstra map in helper_3D.py (the max value in the dijkstra map), which 
+# Note: the path length is calculated by the dijkstra map in helper_3D.py (the max value in the dijkstra map), which
 # starts the counting from 0. As a result, the path length is 1 less than the actual path length / len(path_coords).
-# test_map_1: 
+# test_map_1:
 # size: 7 * 7 * 5
 # longest path length: 28 + 2 + 29 = 59
 test_map_1 = {
     "name": "test_map_1",
     "map": [
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 0, 0, 0, 0]
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 0, 0, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1, 1, 1],
+        ],
+        [
+            [0, 0, 0, 1, 0, 0, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+        ],
+        [
+            [0, 0, 0, 1, 0, 0, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 1, 1, 1, 1, 0],
+        ],
     ],
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 0, 0, 0, 0]
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 1, 1, 1]
-    ],
-    [
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 0, 0, 1, 0],
-        [0, 0, 0, 1, 1, 1, 0]
-    ],
-    [
-        [0, 0, 0, 1, 0, 0, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 0, 0, 1, 0],
-        [0, 0, 1, 1, 1, 1, 0]
-    ]
-],
     "size": (7, 7, 5),
     "path_length": 58,
     "region_number": 1,
-    "info": "Two-layer test map with perpendicular corridors."
+    "info": "Two-layer test map with perpendicular corridors.",
 }
 
 
@@ -82,54 +89,54 @@ test_map_1 = {
 test_map_2 = {
     "name": "test_map_2",
     "map": [
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 0, 0, 0, 0]
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 0, 0, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1, 1, 1],
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0],
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 1, 1, 0, 0, 0],
+        ],
     ],
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 0, 0, 0, 0]
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 1, 1, 1]
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 0, 1, 0, 0, 0]
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 1, 1, 0, 0, 0]
-    ]
-], 
     "size": (7, 7, 5),
-    "path_length": 54, # previously I think it was 56, but it's not because there's a short cut at the beginning of the second layer
+    "path_length": 54,  # previously I think it was 56, but it's not because there's a short cut at the beginning of the second layer
     "region_number": 1,
     "info": "Two-layer test map with parallel corridor",
 }
@@ -142,52 +149,52 @@ test_map_2 = {
 test_map_3 = {
     "name": "test_map_3",
     "map": [
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 0, 0, 0, 0]
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 0, 0, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1, 1, 1],
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],  # diff: [0, 0, 0, 1, 0, 0, 0] in test_map_2
+        ],
+        [
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],  # diff: [0, 0, 1, 1, 0, 0, 0] in test_map_2
+        ],
     ],
-    [
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 0, 0, 0, 0]
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 1, 1, 1]
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0]           # diff: [0, 0, 0, 1, 0, 0, 0] in test_map_2
-    ],
-    [
-        [1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0]           # diff: [0, 0, 1, 1, 0, 0, 0] in test_map_2
-    ]
-],
     "size": (7, 7, 5),
     "path_length": 54,
     "region_number": 1,
@@ -202,55 +209,13 @@ test_map_3 = {
 test_map_4 = {
     "name": "test_map_4",
     "map": [
-    [
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1], 
-        [1, 1, 1]
+        [[1, 0, 1], [1, 0, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
+        [[1, 0, 1], [1, 0, 1], [1, 0, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
+        [[1, 0, 1], [1, 0, 1], [1, 0, 1], [1, 0, 1], [1, 1, 1], [1, 1, 1]],
+        [[1, 1, 1], [1, 1, 1], [1, 0, 1], [1, 0, 1], [1, 0, 1], [1, 1, 1]],
+        [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 0, 1], [1, 0, 1], [1, 1, 1]],
+        [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
     ],
-    [
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1]
-    ],
-    [
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 1, 1],
-        [1, 1, 1]
-    ],
-    [
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 1, 1]
-    ],
-    [
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 0, 1],
-        [1, 0, 1],
-        [1, 1, 1]
-    ],
-    [
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1]
-    ]
-],
     "size": (3, 6, 6),
     "path_length": 4,
     "region_number": 1,
@@ -264,37 +229,27 @@ test_map_4 = {
 test_map_5 = {
     "name": "test_map_5",
     "map": [
-    [
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0],
+        [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        [[1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]],
+        [[1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]],
+        [[1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]],
     ],
-    [
-        [1, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0]
-    ],
-    [
-        [1, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0]
-    ],
-    [
-        [1, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0]
-    ]
-],
     "size": (3, 3, 3),
 }
 
 
 ############ Test the path finding func in the jumping logic #############
-# Note: In Minecraft jumping, the extra head room of the staring position and extra head room of the position 1 before 
+# Note: In Minecraft jumping, the extra head room of the staring position and extra head room of the position 1 before
 # foothold needs to be garanteded
-# 
+#
 #       |__
 # O
 # 大_    __
 #   |   |
-#   |   |                                                          
-
+#   |   |
 
 
 # test_map_6:
@@ -307,28 +262,14 @@ test_map_5 = {
 test_map_6 = {
     "name": "test_map_6",
     "map": [
-    [
-        [1, 0, 0, 0, 1]    
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
     ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ]
-],
     "size": (5, 1, 6),
     "jump_distance": 3,
     "path_length": 1,
@@ -350,28 +291,14 @@ test_map_6 = {
 test_map_7 = {
     "name": "test_map_7",
     "map": [
-    [
-        [1, 0, 0, 0, 1]
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 1]],  # the head room of the foothold position is trivial
     ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 1]     # the head room of the foothold position is trivial
-    ]
-],
     "size": (5, 1, 6),
     "jump_distance": 3,
     "path_length": 1,
@@ -392,28 +319,14 @@ test_map_7 = {
 test_map_8 = {
     "name": "test_map_8",
     "map": [
-    [
-        [1, 0, 0, 0, 1]    
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[1, 0, 0, 0, 1]],  # head blocked in starting position in either direction
     ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [1, 0, 0, 0, 1]     # head blocked in starting position in either direction
-    ]
-],
     "size": (5, 1, 6),
     "jump_distance": 3,
     "path_length": 0,
@@ -422,7 +335,6 @@ test_map_8 = {
     "height_difference": 0,
     "info": "head blocked in starting position in either direction",
 }
-
 
 
 # test_map_9:
@@ -436,28 +348,14 @@ test_map_8 = {
 test_map_9 = {
     "name": "test_map_9",
     "map": [
-    [
-        [1, 0, 0, 0, 1]
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[1, 0, 0, 0, 1]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 1, 1]],  # head blocked in the position before foothold position
     ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 0, 1]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 1, 1]     # head blocked in the position before foothold position
-    ]
-],
     "size": (5, 1, 6),
     "jump_distance": 3,
     "path_length": 0,
@@ -477,28 +375,14 @@ test_map_9 = {
 test_map_10 = {
     "name": "test_map_10",
     "map": [
-    [
-        [1, 0, 0, 1]
+        [[1, 0, 0, 1]],
+        [[1, 0, 0, 1]],
+        [[1, 0, 0, 1]],
+        [[1, 0, 0, 1]],
+        [[0, 0, 0, 0]],
+        [[0, 0, 0, 0]],
+        [[0, 0, 0, 0]],
     ],
-    [
-        [1, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 1]
-    ],
-    [
-        [1, 0, 0, 1]
-    ],
-    [
-        [0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0]
-    ]
-],
     "size": (4, 1, 6),
     "jump_distance": 2,
     "path_length": 1,
@@ -518,28 +402,14 @@ test_map_10 = {
 test_map_11 = {
     "name": "test_map_11",
     "map": [
-    [
-        [1, 0, 1]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ]
-],
     "size": (3, 1, 6),
     "jump_distance": 1,
     "path_length": 1,
@@ -561,28 +431,20 @@ test_map_11 = {
 test_map_12 = {
     "name": "test_map_12",
     "map": [
-    [
-        [1, 0, 1]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [
+            [
+                1,
+                0,
+                0,
+            ]  # the height difference of starting point and foothold position is 1
+        ],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 0]       # the height difference of starting point and foothold position is 1
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]     
-    ]
-],
     "size": (3, 1, 6),
     "jump_distance": 1,
     "path_length": 1,
@@ -604,28 +466,20 @@ test_map_12 = {
 test_map_13 = {
     "name": "test_map_13",
     "map": [
-    [
-        [1, 0, 1]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 0]],
+        [
+            [
+                1,
+                0,
+                0,
+            ]  # the height difference of starting point and foothold position is 2
+        ],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 0]
-    ],
-    [
-        [1, 0, 0]       # the height difference of starting point and foothold position is 2
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ]
-],
     "size": (3, 1, 6),
     "jump_distance": 1,
     "path_length": 0,
@@ -646,29 +500,15 @@ test_map_13 = {
 # info: head blocked in starting position in either direction
 test_map_14 = {
     "name": "test_map_14",
-    "map":[
-    [
-        [1, 0, 1]
+    "map": [
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[1, 0, 1]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]     
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [1, 0, 1]
-    ]
-],
     "size": (3, 1, 6),
     "jump_distance": 1,
     "path_length": 0,
@@ -688,30 +528,15 @@ test_map_14 = {
 # info: head blocked in foothold position
 test_map_15 = {
     "name": "test_map_15",
-    "map": 
-    [
-    [
-        [1, 0, 1]
+    "map": [
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 1, 1]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 1, 1]
-    ]
-],
     "size": (3, 1, 6),
     "jump_distance": 1,
     "path_length": 0,
@@ -733,28 +558,14 @@ test_map_15 = {
 test_map_16 = {
     "name": "test_map_16",
     "map": [
-    [
-        [1, 0, 1]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 1]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 1]
-    ]
-],
     "size": (3, 1, 7),
     "jump_distance": 1,
     "path_length": 0,
@@ -775,29 +586,15 @@ test_map_16 = {
 # info: valid jump but not returnable, so we don't count the jump
 test_map_17 = {
     "name": "test_map_17",
-    "map":[
-    [
-        [1, 0, 1]
+    "map": [
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 1]],
+        [[0, 0, 1]],
     ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 1]
-    ],
-    [
-        [1, 0, 0]
-    ],
-    [
-        [0, 0, 0]
-    ],
-    [
-        [0, 0, 1]
-    ],
-    [
-        [0, 0, 1]
-    ]
-],
     "size": (3, 1, 7),
     "jump_distance": 1,
     "path_length": 0,
@@ -819,30 +616,14 @@ test_map_17 = {
 test_map_18 = {
     "name": "test_map_18",
     "map": [
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [1, 0, 0]
-        ],
-        [
-            [1, 0, 0]
-        ]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[1, 0, 0]],
+        [[1, 0, 0]],
     ],
     "size": (3, 1, 8),
     "jump_distance": 1,
@@ -865,27 +646,13 @@ test_map_18 = {
 test_map_19 = {
     "name": "test_map_19",
     "map": [
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
     ],
     "size": (3, 1, 7),
     "jump_distance": 1,
@@ -908,27 +675,13 @@ test_map_19 = {
 test_map_20 = {
     "name": "test_map_20",
     "map": [
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [0, 0, 1]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[0, 0, 1]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
     ],
     "size": (3, 1, 7),
     "jump_distance": 1,
@@ -951,27 +704,13 @@ test_map_20 = {
 test_map_21 = {
     "name": "test_map_21",
     "map": [
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [1, 0, 1]
-        ],
-        [
-            [0, 0, 1]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ],
-        [
-            [0, 0, 0]
-        ]
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[1, 0, 1]],
+        [[0, 0, 1]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
+        [[0, 0, 0]],
     ],
     "size": (3, 1, 7),
     "jump_distance": 1,
@@ -994,27 +733,13 @@ test_map_21 = {
 test_map_22 = {
     "name": "test_map_22",
     "map": [
-        [
-            [1, 1, 0, 1, 1]
-        ],
-        [
-            [1, 1, 0, 1, 1]
-        ],
-        [
-            [1, 1, 0, 1, 1]
-        ],
-        [
-            [1, 1, 0, 1, 1]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ]
+        [[1, 1, 0, 1, 1]],
+        [[1, 1, 0, 1, 1]],
+        [[1, 1, 0, 1, 1]],
+        [[1, 1, 0, 1, 1]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
     ],
     "size": (5, 1, 7),
     "jump_distance": 1,
@@ -1037,27 +762,13 @@ test_map_22 = {
 test_map_23 = {
     "name": "test_map_23",
     "map": [
-        [
-            [1, 1, 0, 1, 1]
-        ],
-        [
-            [0, 0, 0, 1, 1]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ],
-        [
-            [0, 0, 0, 0, 0]
-        ]
+        [[1, 1, 0, 1, 1]],
+        [[0, 0, 0, 1, 1]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0]],
     ],
     "size": (5, 1, 7),
     "jump_distance": 1,
@@ -1072,6 +783,8 @@ test_map_23 = {
 """
 get the state of the test maps
 """
+
+
 def get_test_state(map_list, tile_types):
     all_pass_test = True
     if len(map_list) == 0:
@@ -1082,24 +795,30 @@ def get_test_state(map_list, tile_types):
         map_locations = get_tile_locations(test_string_map, tile_types)
 
         # get the state of the test map
-        path_length, path_coords, n_jump = calc_longest_path(test_string_map, map_locations, ["AIR"], get_path=True)
+        path_length, path_coords, n_jump = calc_longest_path(
+            test_string_map, map_locations, ["AIR"], get_path=True
+        )
         num_regions = calc_num_regions(test_string_map, map_locations, ["AIR"])
         debug_path_coords = debug_path(path_coords, test_string_map, ["AIR"])
 
-        pass_test = path_length == test_map_dict["path_length"] and \
-                    num_regions == test_map_dict["region_number"] and \
-                    n_jump == test_map_dict["jump"] and \
-                    debug_path_coords
+        pass_test = (
+            path_length == test_map_dict["path_length"]
+            and num_regions == test_map_dict["region_number"]
+            and n_jump == test_map_dict["jump"]
+            and debug_path_coords
+        )
 
         if not pass_test:
             print("-------------------------")
             print(f"Testing on {test_map_dict['name']}")
             print(
                 f"longest path length: {path_length}, it should be {test_map_dict['path_length']}, "
-                f"pass the test? {path_length == test_map_dict['path_length']}")
+                f"pass the test? {path_length == test_map_dict['path_length']}"
+            )
             print(
-                f"num_regions: {num_regions}, it should be {test_map_dict['region_number']}, pass the test? {num_regions == test_map_dict['region_number']}")
-            print(f"The path is valid? {debug_path_coords}") 
+                f"num_regions: {num_regions}, it should be {test_map_dict['region_number']}, pass the test? {num_regions == test_map_dict['region_number']}"
+            )
+            print(f"The path is valid? {debug_path_coords}")
         all_pass_test = all_pass_test and pass_test
     print(f"All tests passed? {all_pass_test}")
     return path_length, path_coords, num_regions
@@ -1108,6 +827,8 @@ def get_test_state(map_list, tile_types):
 """
 plot the test maps using matplotlib 3D voxel / volumetric plotting
 """
+
+
 def plot_3d_map(test_map):
     test_map = np.array(test_map)
 
@@ -1122,20 +843,23 @@ def plot_3d_map(test_map):
     color_map[boolen_map] = "green"
 
     # plot it out!
-    ax = plt.figure().add_subplot(projection='3d')
-    ax.set_box_aspect([test_map.shape[0]/test_map.shape[1],
-                         1,
-                         test_map.shape[2]/test_map.shape[1]])
+    ax = plt.figure().add_subplot(projection="3d")
+    ax.set_box_aspect(
+        [
+            test_map.shape[0] / test_map.shape[1],
+            1,
+            test_map.shape[2] / test_map.shape[1],
+        ]
+    )
     # ax.set_box_aspect([1,
     #                    1,
     #                    5/7])
-    print('test_map.shape:', test_map.shape)
-    ax.voxels(boolen_map, facecolors=color_map, edgecolor='k')
+    print("test_map.shape:", test_map.shape)
+    ax.voxels(boolen_map, facecolors=color_map, edgecolor="k")
     plt.show()
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     ################################################################################
     # test the 3D environment
 
@@ -1155,7 +879,7 @@ if __name__=="__main__":
     # # path_length_2, path_coords_2, num_regions_2 = get_test_state(test_map_2, tile_types)
     # # path_length_3, path_coords_3, num_regions_3 = get_test_state(test_map_3, tile_types)
     # path_length_4, path_coords_4, num_regions_4 = get_test_state(test_map_4, tile_types)
-    
+
     # dijkstra_map_4, _ = run_dijkstra(1, 0, 0, get_string_map(np.array(test_map_4), tile_types), ["AIR"])
     # print("dijkstra_map_4 is \n", dijkstra_map_4)
 
@@ -1171,4 +895,3 @@ if __name__=="__main__":
     for i in range(11, 22):
         test_map_list.append(globals()[f"test_map_{i}"])
     path_length, path_coords, num_regions = get_test_state(test_map_list, tile_types)
-

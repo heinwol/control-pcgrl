@@ -25,30 +25,27 @@ def main(cfg: PoDConfig):
 
     traj_dir = os.path.join(cfg.log_dir, "repair-paths")
 
-    register_env('pcgrl', make_env)
+    register_env("pcgrl", make_env)
     model_cls = CustomFeedForwardModel
     ModelCatalog.register_custom_model("custom_model", model_cls)
 
     if cfg.offline_algo == "BC":
-        algo_config = BCConfig(
-        )
+        algo_config = BCConfig()
     elif cfg.offline_algo == "MARWIL":
-        algo_config = MARWILConfig(
-        )
+        algo_config = MARWILConfig()
     else:
         raise ValueError(f"Invalid offline algorithm: {cfg.offline_algo}")
 
     algo_config.model = {
-        'custom_model': 'custom_model',
-        'custom_model_config': {
-        },
+        "custom_model": "custom_model",
+        "custom_model_config": {},
     }
 
     # Print out some default values.
-    print(algo_config.beta)  
+    print(algo_config.beta)
 
     # Update the config object.
-    algo_config.training(  
+    algo_config.training(
         # lr=tune.grid_search([0.001, 0.0001]), beta=0.0
         lr=0.001,
     )
@@ -58,14 +55,14 @@ def main(cfg: PoDConfig):
 
     # Set the config object's data path.
     # Run this from the ray directory root.
-    algo_config.offline_data(  
+    algo_config.offline_data(
         # input_="./tmp/demo-out/output-2023-0"
         # input_=os.path.join(cfg.log_dir, "demo-out")
         input_=traj_glob,
     )
 
     # Set the config object's env, used for evaluation.
-    algo_config.environment(env='pcgrl')  
+    algo_config.environment(env="pcgrl")
     algo_config.env_config = {**cfg}
 
     algo_config.framework("torch")
@@ -93,7 +90,7 @@ def main(cfg: PoDConfig):
             cfg.offline_algo,
             # "BC",
             param_space=algo_config.to_dict(),
-            tune_config = tune.TuneConfig(
+            tune_config=tune.TuneConfig(
                 metric="info/learner/default_policy/learner_stats/policy_loss",
                 mode="min",
             ),

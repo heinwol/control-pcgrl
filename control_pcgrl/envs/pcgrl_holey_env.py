@@ -19,6 +19,8 @@ import collections
 The PCGRL GYM Environment with borders added into obervations. 2 holes are digged on the borders to make entrance and 
 exit.
 """
+
+
 class PcgrlHoleyEnv(PcgrlCtrlEnv):
     """
     Constructor for the interface.
@@ -29,12 +31,14 @@ class PcgrlHoleyEnv(PcgrlCtrlEnv):
         rep (string): the current representation. This name has to be defined in REPRESENTATIONS
         constant in gym_pcgrl.envs.reps.__init__.py
     """
+
     def __init__(self, prob="binary", rep="narrow", **kwargs):
         super(PcgrlHoleyEnv, self).__init__(prob, rep, **kwargs)
         self._rep: HoleyRepresentation = REPRESENTATIONS[rep](
-            border_tile_index = self.get_border_tile(),
-            empty_tile_index = self.get_empty_tile(),
-            )
+            border_tile_index=self.get_border_tile(),
+            empty_tile_index=self.get_empty_tile(),
+        )
+
     """
     Resets the environment to the start state
 
@@ -42,6 +46,7 @@ class PcgrlHoleyEnv(PcgrlCtrlEnv):
         Observation: the current starting observation have structure defined by
         the Observation Space
     """
+
     def reset(self, *, seed=None, options=None):
         self._rep.set_holes(*self._prob.gen_holes())
         return super().reset()
@@ -55,6 +60,7 @@ class PcgrlHoleyEnv(PcgrlCtrlEnv):
     """
     Close the environment
     """
+
     def close(self):
         if self.viewer:
             self.viewer.close()

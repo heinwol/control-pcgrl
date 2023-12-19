@@ -1,15 +1,18 @@
 from pdb import set_trace as TT
 from timeit import default_timer as timer
 
-import gi 
+import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
 import numpy as np
 
 
-#FIXME: sometimes the mere existence of this class will break a multi-env micropolis run (note: micropolis is deprecated)
+# FIXME: sometimes the mere existence of this class will break a multi-env micropolis run (note: micropolis is deprecated)
 class GtkGUI(Gtk.Window):
-    def __init__(self, env, tile_types, tile_images, metrics, metric_trgs, metric_bounds):
+    def __init__(
+        self, env, tile_types, tile_images, metrics, metric_trgs, metric_bounds
+    ):
         self.env = env
         Gtk.Window.__init__(self, title="Controllable PCGRL")
         self.set_border_width(10)
@@ -17,12 +20,12 @@ class GtkGUI(Gtk.Window):
         self.pixbuf = None
         # This hbox contains the map and the gui side by side
         hbox_0 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        eventbox = Gtk.EventBox()        
+        eventbox = Gtk.EventBox()
         eventbox.connect("motion-notify-event", self.on_mouse_move)
         eventbox.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         eventbox.connect("button-press-event", self.on_mouse_click)
         eventbox.connect("button-release-event", self.on_mouse_release)
-        # self.add(eventbox)        
+        # self.add(eventbox)
 
         image = Gtk.Image()
 
@@ -46,14 +49,16 @@ class GtkGUI(Gtk.Window):
 
         # This hbox contains the auto reset checkbox and the reset button
         hbox_1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        
+
         reset_button = Gtk.Button("reset")
-        reset_button.connect('clicked', lambda item: self.env.reset())
-        hbox_1.pack_start(reset_button, False, False, 0) 
+        reset_button.connect("clicked", lambda item: self.env.reset())
+        hbox_1.pack_start(reset_button, False, False, 0)
 
         auto_reset_button = Gtk.CheckButton("auto reset")
         self.env.auto_reset = False
-        auto_reset_button.connect('clicked', lambda item: self._enable_auto_reset(item.get_active()))
+        auto_reset_button.connect(
+            "clicked", lambda item: self._enable_auto_reset(item.get_active())
+        )
         hbox_1.pack_start(auto_reset_button, False, False, 0)
 
         vbox.pack_start(hbox_1, False, False, 0)
@@ -63,24 +68,32 @@ class GtkGUI(Gtk.Window):
         hbox_static = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         static_checkbox = Gtk.CheckButton("static builds")
         self._static_build = static_checkbox.get_active()
-        static_checkbox.connect('clicked', self.toggle_static_build)
+        static_checkbox.connect("clicked", self.toggle_static_build)
         hbox_static.pack_start(static_checkbox, False, False, 0)
         vbox.pack_start(hbox_static, False, False, 0)
-
 
         for tile in tile_types:
             # This hbox contains the tile type name and the tile image
             hbox_t = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            tile_radio_button = Gtk.RadioButton.new_with_label_from_widget(tile_radio_buttons[0] if len(tile_radio_buttons) > 0 else None, tile)
+            tile_radio_button = Gtk.RadioButton.new_with_label_from_widget(
+                tile_radio_buttons[0] if len(tile_radio_buttons) > 0 else None, tile
+            )
             tile_radio_buttons.append(tile_radio_button)
-            tile_radio_button.connect('toggled', self.on_tool_changed, tile)
+            tile_radio_button.connect("toggled", self.on_tool_changed, tile)
             if tile_images is not None and tile in tile_images:
-                arr = np.array(tile_images[tile].convert('RGB'))
+                arr = np.array(tile_images[tile].convert("RGB"))
                 tile_image = Gtk.Image()
                 shape = arr.shape
                 arr = arr.flatten()
-                pixbuf = GdkPixbuf.Pixbuf.new_from_data(arr,
-                    GdkPixbuf.Colorspace.RGB, False, 8, shape[1], shape[0], 3*shape[1])
+                pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+                    arr,
+                    GdkPixbuf.Colorspace.RGB,
+                    False,
+                    8,
+                    shape[1],
+                    shape[0],
+                    3 * shape[1],
+                )
                 tile_image.set_from_pixbuf(pixbuf)
                 hbox_t.pack_start(tile_radio_button, False, False, 0)
                 hbox_t.pack_start(tile_image, False, False, 0)
@@ -93,9 +106,11 @@ class GtkGUI(Gtk.Window):
         prog_bars = {}
         scales = {}
         prog_labels = {}
-        self.metric_ranges = {k: abs(metric_bounds[k][1] - metric_bounds[k][0]) for k in metrics}
+        self.metric_ranges = {
+            k: abs(metric_bounds[k][1] - metric_bounds[k][0]) for k in metrics
+        }
         for k in self.env.metrics:
-        # if False:
+            # if False:
             metric = metrics[k]
             label = Gtk.Label()
             label.set_text(k)
@@ -103,7 +118,7 @@ class GtkGUI(Gtk.Window):
             if metric is None:
                 metric = 0
 
-            # FIXME: Issues here. Can't find bullet svg, install `conda install -c conda-forge librsvg`, this message 
+            # FIXME: Issues here. Can't find bullet svg, install `conda install -c conda-forge librsvg`, this message
             #  disappears, then left with segfault.
             # ad = Gtk.Adjustment(metric, metric_bounds[k][0], metric_bounds[k][1],
             #                     # env.param_ranges[k] / 20, env.param_ranges[k] / 10, 0)
@@ -115,9 +130,9 @@ class GtkGUI(Gtk.Window):
             # scale.connect("value-changed", self.scale_moved)
             # vbox.pack_start(scale, True, True, 10)
 
-            #HACK: Just use another progress bar for now, smh (no user input!)
+            # HACK: Just use another progress bar for now, smh (no user input!)
             metric_trg = Gtk.ProgressBar()
-#           metric_prog.set_draw_value(True)
+            #           metric_prog.set_draw_value(True)
             self.trg_bars[k] = metric_trg
             vbox.pack_start(metric_trg, True, True, 10)
 
@@ -126,17 +141,17 @@ class GtkGUI(Gtk.Window):
             prog_labels[k] = prog_label
             vbox.pack_start(prog_label, True, True, 0)
             metric_prog = Gtk.ProgressBar()
-#           metric_prog.set_draw_value(True)
+            #           metric_prog.set_draw_value(True)
             prog_bars[k] = metric_prog
             vbox.pack_start(metric_prog, True, True, 10)
-           #bounds = metric_bounds[k]
-           #frac = metrics[k]
-           #metric_prog.set_fraction(frac)
+        # bounds = metric_bounds[k]
+        # frac = metrics[k]
+        # metric_prog.set_fraction(frac)
 
-        hbox_0.add(vbox) 
+        hbox_0.add(vbox)
         self.add(hbox_0)
-       #self.timeout_id = GLib.timeout_add(50, self.on_timeout, None)
-       #self.activity_mode = False
+        # self.timeout_id = GLib.timeout_add(50, self.on_timeout, None)
+        # self.activity_mode = False
         self.image = image
         self.prog_bars = prog_bars
         self.scales = scales
@@ -149,12 +164,12 @@ class GtkGUI(Gtk.Window):
         self.env.auto_reset = enable
 
     def _pause(self):
-            self._paused = True
-            self.play_button.set_active(False)
+        self._paused = True
+        self.play_button.set_active(False)
 
     def _play(self):
-            self._paused = False
-            self.pause_button.set_active(False)
+        self._paused = False
+        self.pause_button.set_active(False)
 
     def on_pause_toggled(self, widget):
         if widget.get_active():
@@ -170,7 +185,9 @@ class GtkGUI(Gtk.Window):
 
     def on_mouse_move(self, widget, event):
         if self._tool_down:
-            self._user_clicks.append((event.x, event.y, self._active_tool, self._static_build))
+            self._user_clicks.append(
+                (event.x, event.y, self._active_tool, self._static_build)
+            )
 
     def toggle_static_build(self, button):
         self._static_build = button.get_active()
@@ -181,7 +198,9 @@ class GtkGUI(Gtk.Window):
         self._active_tool = tile
 
     def on_mouse_click(self, widget, event):
-        self._user_clicks.append((event.x, event.y, self._active_tool, self._static_build))
+        self._user_clicks.append(
+            (event.x, event.y, self._active_tool, self._static_build)
+        )
         self._tool_down = True
         # print('click', widget, event.button, event.time)
 
@@ -214,18 +233,19 @@ class GtkGUI(Gtk.Window):
             Gtk.main_iteration()
 
     def display_image(self, img):
-        # self.image.set_from_file("../Downloads/xbox_cat.png")        
+        # self.image.set_from_file("../Downloads/xbox_cat.png")
         if img is None:
             return
         shape = img.shape
         arr = img.flatten()
         # self.pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(arr, GdkPixbuf.Colorspace.RGB, False, 8, shape[1], shape[0], shape[2] * shape[1])
-        pixbuf = GdkPixbuf.Pixbuf.new_from_data(arr,
-            GdkPixbuf.Colorspace.RGB, False, 8, shape[1], shape[0], 3*shape[1])
+        pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+            arr, GdkPixbuf.Colorspace.RGB, False, 8, shape[1], shape[0], 3 * shape[1]
+        )
         # else:
         # if self.pixbuf is None:
         self.image.set_from_pixbuf(pixbuf)
-            # self.pixbuf.fill(arr)
+        # self.pixbuf.fill(arr)
 
     def scale_moved(self, event):
         k = event.get_name()
@@ -236,7 +256,7 @@ class GtkGUI(Gtk.Window):
         for k, v in self.env.metric_trgs.items():
             self.trg_bars[k].set_fraction(v / self.metric_ranges[k])
 
-         #TODO:
+        # TODO:
         # for k, v in self.env.metric_trgs.items():
         #     if k in self.env.ctrl_metrics:
         #         self.scales[k].set_value(v)
@@ -291,12 +311,17 @@ class GtkGUI(Gtk.Window):
 
 if __name__ == "__main__":
     import pyglet
+
     window = pyglet.window.Window()
-    label = pyglet.text.Label('Hello, world',
-                          font_name='Times New Roman',
-                          font_size=36,
-                          x=window.width//2, y=window.height//2,
-                          anchor_x='center', anchor_y='center')
+    label = pyglet.text.Label(
+        "Hello, world",
+        font_name="Times New Roman",
+        font_size=36,
+        x=window.width // 2,
+        y=window.height // 2,
+        anchor_x="center",
+        anchor_y="center",
+    )
 
     @window.event
     def on_draw():

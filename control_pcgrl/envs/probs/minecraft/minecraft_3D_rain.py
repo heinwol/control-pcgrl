@@ -14,10 +14,30 @@ from timeit import default_timer as timer
 from control_pcgrl.configs.config import Config
 
 from control_pcgrl.envs.probs.problem import Problem, Problem3D
-from control_pcgrl.envs.helper_3D import get_floor_dist, get_path_coords, get_range_reward, get_tile_locations, calc_num_regions, \
-    calc_longest_path, debug_path, plot_3D_path, remove_stacked_path_tiles, run_dijkstra
-from control_pcgrl.envs.probs.minecraft.mc_render import (erase_3D_path, spawn_3D_maze, spawn_3D_border, spawn_3D_path,
-    get_3D_maze_blocks, get_3D_path_blocks, get_erased_3D_path_blocks, render_blocks, spawn_base)
+from control_pcgrl.envs.helper_3D import (
+    get_floor_dist,
+    get_path_coords,
+    get_range_reward,
+    get_tile_locations,
+    calc_num_regions,
+    calc_longest_path,
+    debug_path,
+    plot_3D_path,
+    remove_stacked_path_tiles,
+    run_dijkstra,
+)
+from control_pcgrl.envs.probs.minecraft.mc_render import (
+    erase_3D_path,
+    spawn_3D_maze,
+    spawn_3D_border,
+    spawn_3D_path,
+    get_3D_maze_blocks,
+    get_3D_path_blocks,
+    get_erased_3D_path_blocks,
+    render_blocks,
+    spawn_base,
+)
+
 # from control_pcgrl.test3D import plot_3d_map
 
 
@@ -25,6 +45,7 @@ class Minecraft3Drain(Problem3D):
     """
     The constructor is responsible of initializing all the game parameters
     """
+
     def __init__(self, cfg: Config):
         super().__init__(cfg=cfg)
         self._length = 7
@@ -36,20 +57,22 @@ class Minecraft3Drain(Problem3D):
         self._border_size = (1, 1, 1)
 
         self._target_path = 10
-        self._random_probs = False 
+        self._random_probs = False
 
         self.n_jump = 0
 
         n_floors = self._height // 3
 
         # Max path length involves having a zig-zag pattern on each floor, connected by a set of stairs.
-        max_path_per_floor = np.ceil(self._width / 2) * (self._length) + np.floor(self._length/2)
+        max_path_per_floor = np.ceil(self._width / 2) * (self._length) + np.floor(
+            self._length / 2
+        )
         self._max_path_length = 2 * n_floors * max_path_per_floor
 
         # default conditional targets
         self.static_trgs = {
             "floating_blocks": 0,
-            "regions": 1, 
+            "regions": 1,
             # "path-length": self._max_path_length,
             "path-length": 10 * self._max_path_length,
             "n_jump": 5,
@@ -58,11 +81,17 @@ class Minecraft3Drain(Problem3D):
         # boundaries for conditional inputs/targets
         self.cond_bounds = {
             # Upper bound: checkerboard
-            "floating_blocks": (0, np.floor(self._width * self._length * self._height / 2)),
+            "floating_blocks": (
+                0,
+                np.floor(self._width * self._length * self._height / 2),
+            ),
             "regions": (0, np.ceil(self._width * self._length / 2 * self._height)),
             "path-length": (0, self._max_path_length),
             "n_jump": (0, self._max_path_length // 2),
-            "hanging_blocks": (0, np.floor(self._width * self._length / 2 * self._height)),
+            "hanging_blocks": (
+                0,
+                np.floor(self._width * self._length / 2 * self._height),
+            ),
         }
         self._reward_weights = {
             "floating_blocks": 200,
@@ -88,6 +117,7 @@ class Minecraft3Drain(Problem3D):
     Returns:
         string[]: that contains all the tile names
     """
+
     def get_tile_types(self):
         return ["AIR", "DIRT"]
 
@@ -96,9 +126,9 @@ class Minecraft3Drain(Problem3D):
         path_coords = np.array(path_coords)
         if path_coords.shape == (0,):
             return observation
-        observation['map'][path_coords[:, 0], 
-                           path_coords[:, 1], 
-                           path_coords[:, 2]] = self._path_idx
+        observation["map"][
+            path_coords[:, 0], path_coords[:, 1], path_coords[:, 2]
+        ] = self._path_idx
         return observation
 
     """
@@ -112,15 +142,16 @@ class Minecraft3Drain(Problem3D):
         target_path (int): the current path length that the episode turn when it reaches
         rewards (dict(string,float)): the weights of each reward change between the new_stats and old_stats
     """
+
     def adjust_param(self, **kwargs):
         super().adjust_param(**kwargs)
-        self._length = kwargs.get('length', self._length)
-        self._target_path = kwargs.get('target_path', self._target_path)
-        self._random_probs = kwargs.get('random_probs', self._random_probs)
+        self._length = kwargs.get("length", self._length)
+        self._target_path = kwargs.get("target_path", self._target_path)
+        self._random_probs = kwargs.get("random_probs", self._random_probs)
 
         # self.render_path = kwargs.get('render', self.render_path) or kwargs.get('render_path', self.render_path)
-        
-        rewards = kwargs.get('rewards')
+
+        rewards = kwargs.get("rewards")
         if rewards is not None:
             for t in rewards:
                 if t in self._reward_weights:
@@ -133,6 +164,7 @@ class Minecraft3Drain(Problem3D):
     Parameters:
         start_stats (dict(string,any)): the first stats of the map
     """
+
     def reset(self, start_stats):
         self._rendered_initial_maze = False
         self.path_to_erase = set({})
@@ -148,22 +180,27 @@ class Minecraft3Drain(Problem3D):
         dict(string,any): stats of the current map to be used in the reward, episode_over, debug_info calculations.
         The used status are "reigons": number of connected empty tiles, "path-length": the longest path across the map
     """
+
     def get_stats(self, map):
         map_locations = get_tile_locations(map, self.get_tile_types())
 
         # for erasing the path of the previous iteration in Minecraft
         # new path coords are updated in the render function
 
-        # do not fix the positions of entrance and exit (calculating the longest path among 2 random positions) 
+        # do not fix the positions of entrance and exit (calculating the longest path among 2 random positions)
         # start_time = timer()
-        self.path_length, self.ordered_path, self.n_jump = calc_longest_path(map, map_locations, ["AIR"], get_path=self.render_path)
+        self.path_length, self.ordered_path, self.n_jump = calc_longest_path(
+            map, map_locations, ["AIR"], get_path=self.render_path
+        )
         self.path_coords = remove_stacked_path_tiles(self.ordered_path)
-        
+
         # print(f"minecraft path-finding time: {timer() - start_time}")
         if self.render:
             path_is_valid = debug_path(self.path_coords, map, ["AIR"])
             if not path_is_valid:
-                raise ValueError("The path is not valid, may have some where unstandable for a 2-tile high agent")
+                raise ValueError(
+                    "The path is not valid, may have some where unstandable for a 2-tile high agent"
+                )
         # # fix the positions of entrance and exit at the bottom and diagonal top, respectively
         # p_x, p_y, p_z = 0, 0, 0
         # dijkstra_p, _ = run_dijkstra(p_x, p_y, p_z, map, ["AIR"])
@@ -175,10 +212,10 @@ class Minecraft3Drain(Problem3D):
         # if self.render_path:
         #     if dijkstra_p[d_z][d_y][d_x] > 0:
         #         self.path_coords = get_path_coords(dijkstra_p, d_x, d_y, d_z)
-                # path_debug(path, map, passable_values)
+        # path_debug(path, map, passable_values)
         #     else:
         #         self.path_coords = get_path_coords(dijkstra_p)
-                # path_debug(path, map, passable_values)
+        # path_debug(path, map, passable_values)
         #     # print("path coords: ", self.path_coords)
 
         return {
@@ -186,7 +223,7 @@ class Minecraft3Drain(Problem3D):
             "regions": calc_num_regions(map, map_locations, ["AIR"]),
             "path-length": self.path_length,
             # "path-coords": self.path_coords,
-            "n_jump": self.n_jump
+            "n_jump": self.n_jump,
         }
 
     """
@@ -223,7 +260,7 @@ class Minecraft3Drain(Problem3D):
         boolean: True if the level reached satisfying quality based on the stats and False otherwise
     """
     # def get_episode_over(self, new_stats, old_stats):
-        # return new_stats["regions"] == 1 and new_stats["path-length"] - self._start_stats["path-length"] >= self._target_path
+    # return new_stats["regions"] == 1 and new_stats["path-length"] - self._start_stats["path-length"] >= self._target_path
 
     """
     Get any debug information need to be printed
@@ -236,28 +273,37 @@ class Minecraft3Drain(Problem3D):
         dict(any,any): is a debug information that can be used to debug what is
         happening in the problem
     """
+
     def get_debug_info(self, new_stats, old_stats):
         return {
             "regions": new_stats["regions"],
             "path-length": new_stats["path-length"],
-            "path-imp": new_stats["path-length"] - self._start_stats["path-length"]
+            "path-imp": new_stats["path-length"] - self._start_stats["path-length"],
         }
 
-    def render_path_change(self, map, path_coords, old_path_coords, ordered_path=None, **kwargs):
+    def render_path_change(
+        self, map, path_coords, old_path_coords, ordered_path=None, **kwargs
+    ):
         path_to_erase = set([tuple(coords) for coords in old_path_coords])
-        path_to_render = set([tuple(coords) for coords in path_coords if map[coords[2]][coords[1]][coords[0]] == "AIR"])
+        path_to_render = set(
+            [
+                tuple(coords)
+                for coords in path_coords
+                if map[coords[2]][coords[1]][coords[0]] == "AIR"
+            ]
+        )
 
         # Do not erase pieces of the old path that are in the new one.
-        # Do not erase pieces of the old path that have already been overwritten by some non-air block. 
-        for (x, y, z) in list(path_to_erase):
+        # Do not erase pieces of the old path that have already been overwritten by some non-air block.
+        for x, y, z in list(path_to_erase):
             if (x, y, z) in path_to_render:
                 path_to_erase.remove((x, y, z))
                 # Red glazed terracotta may have deleted me though. Or if I'm perishable, I may have perished.
-                # path_to_render.remove((x, y, z)) 
+                # path_to_render.remove((x, y, z))
             # Note that if we're in the path to render, we can't also be non-air.
             elif map[z][y][x] != "AIR":
                 path_to_erase.remove((x, y, z))
-                # In, e.g., a dungeon, the block may be non-air, but still in the path-to-render, in which case we 
+                # In, e.g., a dungeon, the block may be non-air, but still in the path-to-render, in which case we
                 # will *not* actually render it.
                 if (x, y, z) in path_to_render:
                     path_to_render.remove((x, y, z))
@@ -269,8 +315,16 @@ class Minecraft3Drain(Problem3D):
         # render_path_coords = [coords for coords in self.path_coords if map[coords[2]][coords[1]][coords[0]] != "AIR"]
         spawn_3D_path(path_to_render, ordered_path=ordered_path, **kwargs)
         # time.sleep(0.2)
-    
-    def render(self, map, iteration_num, repr_name, render_matplotlib=False, render_paths=None, **kwargs):
+
+    def render(
+        self,
+        map,
+        iteration_num,
+        repr_name,
+        render_matplotlib=False,
+        render_paths=None,
+        **kwargs
+    ):
         # NOTE: the agent's action is rendered directly before this function is called.
 
         # Render the border if we haven't yet already.
@@ -280,7 +334,13 @@ class Minecraft3Drain(Problem3D):
             spawn_base(map)
             self._rendered_initial_maze = True
 
-        self.render_path_change(map, self.path_coords, self.old_path_coords, ordered_path=self.ordered_path, **kwargs)
+        self.render_path_change(
+            map,
+            self.path_coords,
+            self.old_path_coords,
+            ordered_path=self.ordered_path,
+            **kwargs
+        )
 
         # block_dict.update(get_3D_maze_blocks(map))
         # FIXME: these functions which return dictionaries of blocks to be rendered are broken somehow
@@ -293,7 +353,6 @@ class Minecraft3Drain(Problem3D):
         # just in case.
         # old_path_coords = [tuple(coords) for coords in self.old_path_coords]
 
-
         # render_blocks(block_dict)
 
         # plot the path using matplotlib
@@ -301,10 +360,10 @@ class Minecraft3Drain(Problem3D):
             plot_3D_path(self._length, self._width, self._height, self.path_coords)
 
         self.old_path_coords = self.path_coords.copy()
-        return 
+        return
 
     def get_episode_over(self, new_stats, old_stats):
-        """ If the generator has reached its targets. (change percentage and max iterations handled in pcgrl_env)"""
+        """If the generator has reached its targets. (change percentage and max iterations handled in pcgrl_env)"""
 
         return False
 

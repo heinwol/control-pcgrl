@@ -21,9 +21,11 @@ from control_pcgrl.envs.reps import REPRESENTATIONS
 from control_pcgrl.envs.reps.ca_rep import CARepresentation
 from control_pcgrl.envs.reps.narrow_rep import NarrowRepresentation
 from control_pcgrl.envs.reps.turtle_rep import TurtleRepresentation
-#from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
+
+# from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 # from stable_baselines.common.vec_env import SubprocVecEnv, DummyVecEnv
 # from utils import RenderMonitor, get_map_width
+
 
 def make_env(cfg: Config):
     """
@@ -34,23 +36,27 @@ def make_env(cfg: Config):
     """
     env: PcgrlEnv = None
     try:
-        rep_cls = REPRESENTATIONS[cfg.representation]     # when we first go pass this function, cfg is <class 'omegaconf.dictconfig.DictConfig'>
+        rep_cls = REPRESENTATIONS[
+            cfg.representation
+        ]  # when we first go pass this function, cfg is <class 'omegaconf.dictconfig.DictConfig'>
     except:
         # when we pass here the second time, cfg is <class 'ray.rllib.env.env_context.EnvContext'>, it's a dictionary
-        cfg = Namespace(**cfg)        # it is so ugly
-        rep_cls = REPRESENTATIONS[cfg.representation]  
-    if cfg.representation in ['wide']:
-    # if issubclass(rep_cls, WideRepresentation):
-        if '3D' in cfg.task.problem:
-        # if issubclass(rep_cls, Representation3DABC):
+        cfg = Namespace(**cfg)  # it is so ugly
+        rep_cls = REPRESENTATIONS[cfg.representation]
+    if cfg.representation in ["wide"]:
+        # if issubclass(rep_cls, WideRepresentation):
+        if "3D" in cfg.task.problem:
+            # if issubclass(rep_cls, Representation3DABC):
             # elif cfg.representation in ['wide3D', 'wide3Dholey']:
-                # raise NotImplementedError("3D wide representation not implemented")
+            # raise NotImplementedError("3D wide representation not implemented")
             env = wrappers.ActionMap3DImagePCGRLWrapper(cfg.env_name, cfg)
         else:
             # HACK
-            if 'holey' in cfg.task.problem:
-            # if issubclass(rep_cls, HoleyRepresentationABC):
-                env = wrappers.ActionMapImagePCGRLWrapper(cfg.env_name, bordered_observation=True, cfg=cfg)
+            if "holey" in cfg.task.problem:
+                # if issubclass(rep_cls, HoleyRepresentationABC):
+                env = wrappers.ActionMapImagePCGRLWrapper(
+                    cfg.env_name, bordered_observation=True, cfg=cfg
+                )
             else:
                 env = wrappers.ActionMapImagePCGRLWrapper(cfg.env_name, cfg=cfg)
 
@@ -58,11 +64,13 @@ def make_env(cfg: Config):
         # env = wrappers.CAWrapper(env_name, **kwargs)
         env = wrappers.CAactionWrapper(cfg.env_name, cfg)
 
-    elif np.any(issubclass(rep_cls, c) for c in [NarrowRepresentation, TurtleRepresentation]):
+    elif np.any(
+        issubclass(rep_cls, c) for c in [NarrowRepresentation, TurtleRepresentation]
+    ):
         env = wrappers.CroppedImagePCGRLWrapper(game=cfg.env_name, cfg=cfg)
 
     else:
-        raise Exception('Unknown representation: {}'.format(rep_cls))
+        raise Exception("Unknown representation: {}".format(rep_cls))
     env = control_wrappers.ControlWrapper(env, ctrl_metrics=cfg.controls, cfg=cfg)
     if not cfg.evaluate:
         if cfg.controls is not None:

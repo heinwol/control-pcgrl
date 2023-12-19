@@ -6,9 +6,21 @@ import numpy as np
 from PIL import Image
 
 from control_pcgrl.envs.probs.problem import Problem
-from control_pcgrl.envs.helper_3D import (get_range_reward, get_tile_locations, calc_num_regions, get_path_coords,
-    calc_certain_tile, run_dijkstra)
-from control_pcgrl.envs.probs.minecraft.mc_render import erase_3D_path, spawn_2D_maze, spawn_3D_maze, spawn_3D_border, spawn_3D_path
+from control_pcgrl.envs.helper_3D import (
+    get_range_reward,
+    get_tile_locations,
+    calc_num_regions,
+    get_path_coords,
+    calc_certain_tile,
+    run_dijkstra,
+)
+from control_pcgrl.envs.probs.minecraft.mc_render import (
+    erase_3D_path,
+    spawn_2D_maze,
+    spawn_3D_maze,
+    spawn_3D_border,
+    spawn_3D_path,
+)
 
 """
 Generate a fully connected top down layout where the longest path is greater than a certain threshold
@@ -59,7 +71,7 @@ Please check out the minecraft_3D_holey_dungeon_prob.py
 #         #     "enemies": 1,
 #         #     "nearest-enemy":2
 #         # }
-        
+
 #         # change floor by stairs require 6 path_length for each floor
 
 # #       self._max_path_length = np.ceil(self._width / 2 + 1) * (self._height)
@@ -67,8 +79,8 @@ Please check out the minecraft_3D_holey_dungeon_prob.py
 #         # default conditional targets
 #         self.static_trgs = {
 #             "enemies": (2, self._max_enemies),
-#             "regions": 1, 
-#             "path-length": 10 * self._max_path_length, 
+#             "regions": 1,
+#             "path-length": 10 * self._max_path_length,
 #             "nearest-enemy": (5, self._max_nearest_enemy),
 #             "chests": 1,
 #             "n_jump": 3
@@ -96,9 +108,9 @@ Please check out the minecraft_3D_holey_dungeon_prob.py
 #         }
 
 #         self._reward_weights = {
-#             "regions": 0, 
-#             "path-length": 100, 
-#             "chests": 300, 
+#             "regions": 0,
+#             "path-length": 100,
+#             "chests": 300,
 #             "n_jump": 100,
 #             "enemies": 100,
 #             "nearest-enemy": 200,
@@ -155,7 +167,7 @@ Please check out the minecraft_3D_holey_dungeon_prob.py
 #         if self._random_probs:
 #             self._prob["AIR"] = self._random.random()
 #             self._prob["DIRT"] = self._random.random()
-            
+
 #             self._prob["PUMPKIN"] = self._random.random()
 #             self._prob["SKULL"] = self._random.random()
 
@@ -296,19 +308,19 @@ Please check out the minecraft_3D_holey_dungeon_prob.py
 #         for (x, y, z) in self.path_coords:
 #             if (x, y, z) in path_to_erase:
 #                 path_to_erase.remove((x, y, z))
-        
+
 #         if self.render_path:
 #             # block_dict.update(get_erased_3D_path_blocks(self.old_path_coords))
 #             # erase_3D_path(path_to_erase)
-                
+
 #             # block_dict.update(get_3D_path_blocks(self.path_coords))
 #             spawn_3D_maze(map)
 #             spawn_3D_path(self.path_coords)
 #             # time.sleep(0.2)
-         
+
 #         # if iteration_num == 0:
 #         #     spawn_3D_border(map, self._border_tile)
-#         # # if the representation is narrow3D or turtle3D, we don't need to render all the map at each step 
+#         # # if the representation is narrow3D or turtle3D, we don't need to render all the map at each step
 #         # if repr_name == "narrow3D" or repr_name == "turtle3D":
 #         #     if iteration_num == 0:
 #         #         spawn_3D_maze(map, self._border_tile)
@@ -319,4 +331,4 @@ Please check out the minecraft_3D_holey_dungeon_prob.py
 #         #     spawn_3D_path(self.path_coords)
 #         #     # time.sleep(0.2)
 #         #     erase_3D_path(self.path_coords)
-#         return 
+#         return

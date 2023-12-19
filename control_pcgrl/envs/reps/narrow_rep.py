@@ -1,6 +1,9 @@
 from pdb import set_trace as TT
 from control_pcgrl.configs.config import Config
-from control_pcgrl.envs.reps.representation import EgocentricRepresentation, Representation
+from control_pcgrl.envs.reps.representation import (
+    EgocentricRepresentation,
+    Representation,
+)
 from PIL import Image
 from gymnasium import spaces
 import numpy as np
@@ -10,10 +13,13 @@ from collections import OrderedDict
 The narrow representation where the agent is trying to modify the tile value of a certain
 selected position that is selected randomly or sequentially similar to cellular automata
 """
+
+
 class NarrowRepresentation(EgocentricRepresentation):
     """
     Initialize all the parameters used by that representation
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._act_coords = None
@@ -24,6 +30,7 @@ class NarrowRepresentation(EgocentricRepresentation):
     Get a list of (y:height, x:width) or (z:height, y:width, x:length) coordinates corresponding to coordinates of tiles to be edited by the 
     generator-agent. Dimension ignored.
     """
+
     def get_act_coords(self):
         # act_coords = np.argwhere(np.ones(self._map.shape))
         act_coords = super().get_valid_agent_coords()
@@ -38,6 +45,7 @@ class NarrowRepresentation(EgocentricRepresentation):
         height (int): the generated map height
         prob (dict(int,float)): the probability distribution of each tile value
     """
+
     def reset(self, dims, prob):
         super().reset(dims, prob)
         self.n_step = 0
@@ -62,11 +70,11 @@ class NarrowRepresentation(EgocentricRepresentation):
         Discrete: the action space used by that narrow representation which
         correspond to which value for each tile type
     """
+
     def get_action_space(self, dims, num_tiles):
         # FIXME: For backward compatibility only!
         # return spaces.Discrete(num_tiles + 1)
         return spaces.Discrete(num_tiles)
-
 
     """
     Adjust the current used parameters
@@ -74,6 +82,7 @@ class NarrowRepresentation(EgocentricRepresentation):
     Parameters:
         random_tile (boolean): if the system will move between tiles random (true) or sequentially (false)
     """
+
     def adjust_param(self, cfg: Config):
         super().adjust_param(cfg=cfg)
         self._act_coords = self.get_act_coords()
@@ -86,22 +95,25 @@ class NarrowRepresentation(EgocentricRepresentation):
     Returns:
         boolean: True if the action change the map, False if nothing changed
     """
+
     def update(self, action, **kwargs):
-        #FIXME: Use the `pos` provided as argument
+        # FIXME: Use the `pos` provided as argument
         change = 0
         # if action > 0:
-        change += [0,1][self._map[tuple(self._pos)] != action]
+        change += [0, 1][self._map[tuple(self._pos)] != action]
         self._map[tuple(self._pos)] = action
         if self._random_tile:
             if self.n_step == len(self._act_coords):
                 np.random.shuffle(self._act_coords)
         self._pos = self._act_coords[self.n_step % len(self._act_coords)]
-        self._positions = [self._pos]  # In case cfg.show_agents is True in single-player setting.
+        self._positions = [
+            self._pos
+        ]  # In case cfg.show_agents is True in single-player setting.
         self.n_step += 1
         super().update(action)
         return change, self._pos
-    
-    def update_state(self, action):        # ZJ: why do we need this?
+
+    def update_state(self, action):  # ZJ: why do we need this?
         return self.update(action)
 
     # """
@@ -112,7 +124,7 @@ class NarrowRepresentation(EgocentricRepresentation):
     #     lvl_image (img): the current level_image without modifications
     #     tile_size (int): the size of tiles in pixels used in the lvl_image
     #     border_size ((int,int)): an offeset in tiles if the borders are not part of the level
-        
+
     # Returns:
     #     img: the modified level image
     # """
@@ -132,7 +144,6 @@ class NarrowRepresentation(EgocentricRepresentation):
     #     lvl_image.paste(x_graphics, ((self._x+border_size[0])*tile_size, (self._y+border_size[1])*tile_size,
     #                                     (self._x+border_size[0]+1)*tile_size,(self._y+border_size[1]+1)*tile_size), x_graphics)
     #     return lvl_image
-
 
     def get_pos_at_step(self, step):
         return self._act_coords[step % len(self._act_coords)]

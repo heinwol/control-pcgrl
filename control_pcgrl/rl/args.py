@@ -40,7 +40,7 @@ def parse_pcgrl_args(args):
     opts_dict = vars(opts)
 
     if opts.load_args is not None:
-        with open(f'configs/rl/auto/settings_{opts.load_args}.json') as f:
+        with open(f"configs/rl/auto/settings_{opts.load_args}.json") as f:
             new_arg_dict = json.load(f)
             opts_dict.update(new_arg_dict)
 
@@ -98,15 +98,15 @@ def get_args():
         help="Which game level metrics to use as controls for the generator",
         default=None,
     )
-#   opts.add_argument(
-#       "--resume",
-#       help="Are we resuming from a saved training run?",
-#       action="store_true",
-#   )
+    #   opts.add_argument(
+    #       "--resume",
+    #       help="Are we resuming from a saved training run?",
+    #       action="store_true",
+    #   )
     args.add_argument(
         "--exp_id",
         help="An experiment ID for tracking different runs of experiments with identical hyperparameters.",
-        type=int, 
+        type=int,
         default=0,
     )
     args.add_argument(
@@ -126,10 +126,7 @@ def get_args():
         type=int,
         default=1,
     )
-    args.add_argument("--render",
-        help="Render an environment?", 
-        action="store_true"
-    )
+    args.add_argument("--render", help="Render an environment?", action="store_true")
     args.add_argument(
         "--load_best",
         help="Whether to load the best saved model of a given run rather than the latest.",
@@ -158,12 +155,12 @@ def get_args():
         help="Fancy ish teacher algorithm for controllable targets.",
         action="store_true",
     )
-#   opts.add_argument(
-#       "--evo_compare",
-#       help="Compare with work in evo-pcgrl using pyribs to train NNs as generators.",
-#       action="store_true",
-#   )
-    
+    #   opts.add_argument(
+    #       "--evo_compare",
+    #       help="Compare with work in evo-pcgrl using pyribs to train NNs as generators.",
+    #       action="store_true",
+    #   )
+
     args.add_argument(
         "--n_frames",
         help="The net total number of gameplay frames to be experienced by the agent during training.",
@@ -173,15 +170,15 @@ def get_args():
     args.add_argument(
         "-la",
         "--load_args",
-        help='Rather than having the above opts supplied by the command-line, load them from a settings.json file. (Of '
-        'course, the value of this arg in the json will have no effect.)',
+        help="Rather than having the above opts supplied by the command-line, load them from a settings.json file. (Of "
+        "course, the value of this arg in the json will have no effect.)",
         type=str,
         default=None,
     )
     args.add_argument(
         "--overwrite",
-        action='store_true',
-        help="Overwrite previous experiment with same name."
+        action="store_true",
+        help="Overwrite previous experiment with same name.",
     )
     args.add_argument(
         "--cuda",
@@ -189,56 +186,52 @@ def get_args():
         action="store_true",
     )
     args.add_argument(
-        '--wandb',
-        help='Whether to use wandb for logging.',
+        "--wandb",
+        help="Whether to use wandb for logging.",
         action=argparse.BooleanOptionalAction,
         default=True,
     )
     args.add_argument(
-        '--record_env',
-        help='Whether to record the environment during inference.',
+        "--record_env",
+        help="Whether to record the environment during inference.",
         action=argparse.BooleanOptionalAction,
         default=False,
     )
     args.add_argument(
-        '--max_board_scans',
-        help='Number of max iterations in terms of maximum number of times the board can be scanned by the agent.',
+        "--max_board_scans",
+        help="Number of max iterations in terms of maximum number of times the board can be scanned by the agent.",
         type=int,
         default=1,
     )
     args.add_argument(
-        '--n_aux_tiles',
-        help='Number of auxiliary tiles to use (for the agent to leave itself messages for later).',
+        "--n_aux_tiles",
+        help="Number of auxiliary tiles to use (for the agent to leave itself messages for later).",
         type=int,
         default=0,
     )
     args.add_argument(
-        '--lr',
-        help='Learning rate for the agent.',
+        "--lr",
+        help="Learning rate for the agent.",
         type=float,
         default=5e-6,
     )
     args.add_argument(
-        '--load',
-        help='Whether to load a model from a checkpoint.',
-        action='store_true',
+        "--load",
+        help="Whether to load a model from a checkpoint.",
+        action="store_true",
     )
     args.add_argument(
-        '--evaluate',
-        help='Whether to evaluate a model.',
-        action='store_true',
+        "--evaluate",
+        help="Whether to evaluate a model.",
+        action="store_true",
     )
     args.add_argument(
-        '--infer',
-        help='Whether to do inference with a model.',
-        action='store_true',
+        "--infer",
+        help="Whether to do inference with a model.",
+        action="store_true",
     )
     args.add_argument(
-        "-ga",
-        "--gamma",
-        type=float,
-        default=0.99,
-        help="Discount factor of the MDP."
+        "-ga", "--gamma", type=float, default=0.99, help="Discount factor of the MDP."
     )
 
     return args

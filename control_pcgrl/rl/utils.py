@@ -14,9 +14,10 @@ import gymnasium as gym
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.tune import register_env
 from gymnasium.spaces import Tuple
+
 # from stable_baselines import PPO2
 # from stable_baselines.bench import Monitor
-#from stable_baselines.common.vec_env import DummyVecEnv, SubprocVecEnv
+# from stable_baselines.common.vec_env import DummyVecEnv, SubprocVecEnv
 import torch
 
 from control_pcgrl.configs.config import Config, EvalConfig
@@ -27,7 +28,13 @@ from control_pcgrl.rl.envs import make_env
 PROJ_DIR = Path(__file__).parent.parent.parent
 
 # NOTE: minecraft has to precede zelda since minecraft zelda maze has both phrases in its name.
-MAP_WIDTHS = [("binary", 16), ("minecraft_3D_rain", 7), ("minecraft_3D", 15), ("zelda", 16), ("sokoban", 5)]
+MAP_WIDTHS = [
+    ("binary", 16),
+    ("minecraft_3D_rain", 7),
+    ("minecraft_3D", 15),
+    ("zelda", 16),
+    ("sokoban", 5),
+]
 
 PROB_CONTROLS = {
     "binary_ctrl": [
@@ -52,7 +59,7 @@ PROB_CONTROLS = {
         # ["symmetry", "sol-length"],
     ],
     "smb_ctrl": [
-        ['enemies', 'jumps'],
+        ["enemies", "jumps"],
         # ["emptiness", "jumps"],
         # ["symmetry", "jumps"],
     ],
@@ -61,10 +68,11 @@ PROB_CONTROLS = {
     ],
 }
 
+
 @ray.remote
 class IdxCounter:
-    ''' When using rllib trainer to train and simulate on evolved maps, this global object will be
-    responsible for providing unique indices to parallel environments.'''
+    """When using rllib trainer to train and simulate on evolved maps, this global object will be
+    responsible for providing unique indices to parallel environments."""
 
     def __init__(self):
         self.count = 0
@@ -100,17 +108,19 @@ class IdxCounter:
         for i, wk in enumerate(self.keys):
             h = hashes[i % len(hashes)]
             hashes_to_keys[h].append(wk)
-        
+
         self.hashes_to_keys = hashes_to_keys
 
     def scratch(self):
         return self.hashes_to_keys
+
 
 def get_map_width(game):
     for k, v in MAP_WIDTHS:
         if k in game:
             return v
     raise Exception("Unknown game")
+
 
 # def get_crop_size(game):
 #     if "binary" in game:
@@ -125,7 +135,7 @@ def get_map_width(game):
 #         raise Exception("Unknown game")
 
 
-#class RenderMonitor(Monitor):
+# class RenderMonitor(Monitor):
 #    """
 #    Wrapper for the environment to save data in .csv files.
 #    """
@@ -167,7 +177,7 @@ def get_action(obs, env, model, action_type=True):
     return action
 
 
-#def make_env(env_name, representation, rank=0, log_dir=None, **kwargs):
+# def make_env(env_name, representation, rank=0, log_dir=None, **kwargs):
 #    """
 #    Return a function that will initialize the environment when called.
 #    """
@@ -198,7 +208,7 @@ def get_action(obs, env, model, action_type=True):
 #    return _thunk
 
 
-#def make_vec_envs(env_name, representation, log_dir, n_cpu, **kwargs):
+# def make_vec_envs(env_name, representation, log_dir, n_cpu, **kwargs):
 #    """
 #    Prepare a vectorized environment using a list of 'make_env' functions.
 #    """
@@ -226,24 +236,24 @@ def get_env_name(game, representation):
 
 
 def get_log_dir(cfg: Config):
-    default_dir = os.path.join(PROJ_DIR, 'rl_runs')
+    default_dir = os.path.join(PROJ_DIR, "rl_runs")
 
     log_dir = os.path.join(
         cfg.runs_dir if cfg.runs_dir is not None else default_dir,
         cfg.algorithm,
-        cfg.task.name, 
+        cfg.task.name,
         # "weights_" + "-".join(f"{k}-{v}" for k, v in cfg.task.weights.items()),
         cfg.representation,
-        cfg.multiagent.policies, # default to single policy
+        cfg.multiagent.policies,  # default to single policy
     )
-    log_dir += '/'
+    log_dir += "/"
 
     if cfg.model.name is not None:
-        log_dir += cfg.model.name + '_'
+        log_dir += cfg.model.name + "_"
 
     if cfg.controls is not None:
-        log_dir += "" + "-".join(["ctrl"] + cfg.controls + '_')
-    
+        log_dir += "" + "-".join(["ctrl"] + cfg.controls + "_")
+
     if cfg.change_percentage is not None:
         log_dir += "chng-{}_".format(cfg.change_percentage)
 
@@ -256,7 +266,7 @@ def get_log_dir(cfg: Config):
             log_dir += "obsWin-{}x{}-".format(*cfg.task.obs_window)
         else:
             log_dir += "obsWin-{}x{}x{}-".format(*cfg.task.obs_window)
-    
+
     if cfg.act_window is not None:
         log_dir += "actWin-{}x{}-".format(*cfg.act_window)
 
@@ -264,17 +274,25 @@ def get_log_dir(cfg: Config):
         log_dir += "midEpTrgs_"
 
     if hasattr(cfg, "alp_gmm") and cfg.alp_gmm:
-        log_dir += "ALPGMM_"  
+        log_dir += "ALPGMM_"
 
     if cfg.multiagent.n_agents != 0:
-        log_dir += f"{cfg.multiagent['n_agents']}-player_" + ('Show' if cfg.show_agents else '')
+        log_dir += f"{cfg.multiagent['n_agents']}-player_" + (
+            "Show" if cfg.show_agents else ""
+        )
 
     # TODO: Can have subdirectories for given settings of a given model type.
     if cfg.model.name is not None:
-        log_dir += f"{cfg.model.conv_filters}-convSz_" if cfg.model.conv_filters != 64 else ""
-        log_dir += f"{cfg.model.fc_size}-fcSz_" if cfg.model.fc_size != 64 and cfg.model.name != 'NCA' else ""
+        log_dir += (
+            f"{cfg.model.conv_filters}-convSz_" if cfg.model.conv_filters != 64 else ""
+        )
+        log_dir += (
+            f"{cfg.model.fc_size}-fcSz_"
+            if cfg.model.fc_size != 64 and cfg.model.name != "NCA"
+            else ""
+        )
 
-    if cfg.model.name == 'SeqNCA':
+    if cfg.model.name == "SeqNCA":
         log_dir += f"pw-{cfg.model.patch_width}_"
 
     if cfg.n_aux_tiles > 0:
@@ -285,7 +303,7 @@ def get_log_dir(cfg: Config):
 
     if cfg.n_static_walls is not None:
         log_dir += f"{cfg.n_static_walls}-staticWalls_"
-    
+
     if cfg.learning_rate:
         log_dir += f"lr-{cfg.learning_rate:.1e}_"
 
@@ -305,7 +323,9 @@ def validate_config(cfg: Config):
     NOTE: This function `validate_config(validate_config(cfg)) == validate_config(cfg) ...`
     """
 
-    cfg.static_tile_wrapper = cfg.static_prob is not None or cfg.n_static_walls is not None
+    cfg.static_tile_wrapper = (
+        cfg.static_prob is not None or cfg.n_static_walls is not None
+    )
 
     if cfg.task.obs_window is None:
         # This guy gotta observe the holes.
@@ -323,16 +343,18 @@ def validate_config(cfg: Config):
         # Just broken (nothing wrong in theory)
         return False
 
-    if cfg.model.name == 'seqnca' and np.any(cfg.model.patch_width > cfg.task.obs_window):
+    if cfg.model.name == "seqnca" and np.any(
+        cfg.model.patch_width > cfg.task.obs_window
+    ):
         return False
 
     # TODO: Only QMIX when multagent.
 
-    # TODO: Potentially make sure that action space does not correspond to a level patch that is bigger than the 
+    # TODO: Potentially make sure that action space does not correspond to a level patch that is bigger than the
     # observation.
 
     return cfg
-    
+
 
 # def load_model(log_dir, n_tools=None, load_best=False):
 #     if load_best:
@@ -340,13 +362,13 @@ def validate_config(cfg: Config):
 #     else:
 #         name = "latest"
 #     model_path = os.path.join(log_dir, "{}_model.pkl".format(name))
-# 
+#
 #     if not os.path.exists(model_path):
 #         model_path = os.path.join(log_dir, "{}_model.zip".format(name))
-# 
+#
 #     if not os.path.exists(model_path):
 #         files = [f for f in os.listdir(log_dir) if ".pkl" in f or ".zip" in f]
-# 
+#
 #         if len(files) > 0:
 #             # selects the last file listed by os.listdir
 #             # What the fuck is up with the random thing
@@ -356,13 +378,13 @@ def validate_config(cfg: Config):
 #             return None
 # #           raise Exception("No models are saved at {}".format(model_path))
 #     print("Loading model at {}".format(model_path))
-# 
+#
 #     if n_tools:
 #         policy_kwargs = {"n_tools": n_tools}
 #     else:
 #         policy_kwargs = {}
 #     model = PPO2.load(model_path, reset_num_timesteps=False)
-# 
+#
 #     return model
 
 
@@ -370,13 +392,13 @@ def max_exp_idx(exp_name):
     log_dir = os.path.join("../runs", exp_name)
 
     # Collect log directories corresponding to this experiment.
-    log_files = glob.glob('{}*'.format(log_dir))
+    log_files = glob.glob("{}*".format(log_dir))
 
     if len(log_files) == 0:
         n = 1
     else:
         # Get the IDs of past log directories, assign the next one to this experiment (should only apply when reloading!)
-        log_ns = [re.search('_(\d+)(_log)?$', f).group(1) for f in log_files]
+        log_ns = [re.search("_(\d+)(_log)?$", f).group(1) for f in log_files]
         n = max(log_ns)
     return int(n)
 
@@ -390,16 +412,16 @@ def parse_ppo_config(
     # checkpoint_path_file,
     model_cfg,
     multiagent_config={},
-    **kwargs
-    ):
-    num_workers = kwargs.get('num_workers', 0)
-    num_envs_per_worker = kwargs.get('num_envs_per_worker', 1)
+    **kwargs,
+):
+    num_workers = kwargs.get("num_workers", 0)
+    num_envs_per_worker = kwargs.get("num_envs_per_worker", 1)
     # eval_num_workers = kwargs.get('num_workers', 0)
     eval_num_workers = num_workers if cfg.evaluate else 0
 
-    ppo_config = PPOConfig(
-    )
-    ppo_config.environment(env='pcgrl', 
+    ppo_config = PPOConfig()
+    ppo_config.environment(
+        env="pcgrl",
         render_env=cfg.render,
         env_config={
             **cfg,  # Maybe env should get its own config? (A subset of the original?)
@@ -408,17 +430,17 @@ def parse_ppo_config(
         env_task_fn=set_map_fn,
         disable_env_checking=True,
     )
-    ppo_config.framework('torch')
+    ppo_config.framework("torch")
     ppo_config.rollouts(
         num_rollout_workers=num_workers,
         num_envs_per_worker=num_envs_per_worker,
     )
     ppo_config.training(
         model={
-            'custom_model': 'custom_model',
-            'custom_model_config': {
+            "custom_model": "custom_model",
+            "custom_model_config": {
                 "dummy_env_obs_space": copy.copy(agent_obs_space),
-            **model_cfg,
+                **model_cfg,
             },
         },
         lr=cfg.learning_rate,
@@ -433,9 +455,13 @@ def parse_ppo_config(
     #     },
     # )
     ppo_config.evaluation(
-        evaluation_interval=1 if not cfg.evaluate else cfg.n_eval_episodes,  # meaningless if evaluating pre-trained agent (?)
-        evaluation_duration_unit='episodes',
-        evaluation_duration=cfg.n_eval_episodes if cfg.evaluate else max(1, eval_num_workers),
+        evaluation_interval=1
+        if not cfg.evaluate
+        else cfg.n_eval_episodes,  # meaningless if evaluating pre-trained agent (?)
+        evaluation_duration_unit="episodes",
+        evaluation_duration=cfg.n_eval_episodes
+        if cfg.evaluate
+        else max(1, eval_num_workers),
         evaluation_num_workers=eval_num_workers,
         evaluation_config={
             "env_config": {
@@ -457,96 +483,95 @@ def parse_ppo_config(
     ppo_config.exploration(
         explore=True,
     )
-    ppo_config.resources(
-        num_gpus=cfg.hardware.n_gpu
-    )
+    ppo_config.resources(num_gpus=cfg.hardware.n_gpu)
 
-#     ppo_config = {
-#         'env': 'pcgrl',
-#         **multiagent_config,
-#         'framework': 'torch',
-#         'num_workers': num_workers if not (cfg.evaluate or cfg.infer) else 0,
-#         'num_gpus': cfg.hardware.n_gpu,
-#         'env_config': {
-#             **cfg,  # Maybe env should get its own config? (A subset of the original?)
-#             "evaluation_env": False,
-#         },
-#         'num_envs_per_worker': num_envs_per_worker,
-#         'render_env': cfg.render,
-#         'lr': cfg.learning_rate,
-#         'gamma': cfg.gamma,
-#         'model': {
-#             'custom_model': 'custom_model',
-#             'custom_model_config': {
-#                 "dummy_env_obs_space": copy.copy(agent_obs_space),
-#             **model_cfg,
-#             },
-#         },
-#         # When training, eval for 1 episode every 100 train steps. If evaluating, evaluate for 100 episodes.
-#         "evaluation_interval": 1 if not cfg.evaluate else cfg.n_eval_episodes,  # meaningless if evaluating pre-trained agent (?)
-#         "evaluation_duration_unit": "episodes",
-#         "evaluation_duration": cfg.n_eval_episodes if cfg.evaluate else max(1, eval_num_workers),
-#         "evaluation_num_workers": eval_num_workers,
-#         "env_task_fn": set_map_fn,
-#         "evaluation_config": {
-#             "env_config": {
-#                 **cfg,
-#                 "evaluation_env": True,
-#                 "num_eval_envs": num_envs_per_worker * eval_num_workers,
-#             },
-#             "explore": True if cfg.infer else False,
-#             "render_env": cfg.render,
-#         },
-#         "logger_config": {
-#                 # "wandb": {
-#                     # "project": "PCGRL",
-#                     # "name": exp_name_id,
-#                     # "id": exp_name_id,
-#                     # "api_key_file": "~/.wandb_api_key"
-#             # },
-#             **logger_type,
-#             # Optional: Custom logdir (do not define this here
-#             # for using ~/ray_results/...).
-#             "logdir": log_dir,
-#         },
-# #       "exploration_config": {
-# #           "type": "Curiosity",
-# #       }
-# #       "log_level": "INFO",
-#         # "train_batch_size": 50,
-#         # "sgd_minibatch_size": 50,
-#         'callbacks': stats_callbacks,
+    #     ppo_config = {
+    #         'env': 'pcgrl',
+    #         **multiagent_config,
+    #         'framework': 'torch',
+    #         'num_workers': num_workers if not (cfg.evaluate or cfg.infer) else 0,
+    #         'num_gpus': cfg.hardware.n_gpu,
+    #         'env_config': {
+    #             **cfg,  # Maybe env should get its own config? (A subset of the original?)
+    #             "evaluation_env": False,
+    #         },
+    #         'num_envs_per_worker': num_envs_per_worker,
+    #         'render_env': cfg.render,
+    #         'lr': cfg.learning_rate,
+    #         'gamma': cfg.gamma,
+    #         'model': {
+    #             'custom_model': 'custom_model',
+    #             'custom_model_config': {
+    #                 "dummy_env_obs_space": copy.copy(agent_obs_space),
+    #             **model_cfg,
+    #             },
+    #         },
+    #         # When training, eval for 1 episode every 100 train steps. If evaluating, evaluate for 100 episodes.
+    #         "evaluation_interval": 1 if not cfg.evaluate else cfg.n_eval_episodes,  # meaningless if evaluating pre-trained agent (?)
+    #         "evaluation_duration_unit": "episodes",
+    #         "evaluation_duration": cfg.n_eval_episodes if cfg.evaluate else max(1, eval_num_workers),
+    #         "evaluation_num_workers": eval_num_workers,
+    #         "env_task_fn": set_map_fn,
+    #         "evaluation_config": {
+    #             "env_config": {
+    #                 **cfg,
+    #                 "evaluation_env": True,
+    #                 "num_eval_envs": num_envs_per_worker * eval_num_workers,
+    #             },
+    #             "explore": True if cfg.infer else False,
+    #             "render_env": cfg.render,
+    #         },
+    #         "logger_config": {
+    #                 # "wandb": {
+    #                     # "project": "PCGRL",
+    #                     # "name": exp_name_id,
+    #                     # "id": exp_name_id,
+    #                     # "api_key_file": "~/.wandb_api_key"
+    #             # },
+    #             **logger_type,
+    #             # Optional: Custom logdir (do not define this here
+    #             # for using ~/ray_results/...).
+    #             "logdir": log_dir,
+    #         },
+    # #       "exploration_config": {
+    # #           "type": "Curiosity",
+    # #       }
+    # #       "log_level": "INFO",
+    #         # "train_batch_size": 50,
+    #         # "sgd_minibatch_size": 50,
+    #         'callbacks': stats_callbacks,
 
-#         # To take random actions while changing all tiles at once seems to invite too much chaos.
-#         'explore': True,
+    #         # To take random actions while changing all tiles at once seems to invite too much chaos.
+    #         'explore': True,
 
-#         # `ray.tune` seems to need these spaces specified here.
-#         # 'observation_space': dummy_env.observation_space,
-#         # 'action_space': dummy_env.action_space,
+    #         # `ray.tune` seems to need these spaces specified here.
+    #         # 'observation_space': dummy_env.observation_space,
+    #         # 'action_space': dummy_env.action_space,
 
-#         # 'create_env_on_driver': True,
-#         # 'checkpoint_path_file': checkpoint_path_file,
-#         # 'record_env': log_dir,
-#         'disable_env_checking': True,
+    #         # 'create_env_on_driver': True,
+    #         # 'checkpoint_path_file': checkpoint_path_file,
+    #         # 'record_env': log_dir,
+    #         'disable_env_checking': True,
 
-#         'train_batch_size': cfg.train_batch_size,
-#     }
+    #         'train_batch_size': cfg.train_batch_size,
+    #     }
     return ppo_config
 
 
 def make_grouped_env(config):
-    
     n_agents = config.multiagent.n_agents
     dummy_env = make_env(config)
-    groups = {'group_1': list(dummy_env.observation_space.keys())}
+    groups = {"group_1": list(dummy_env.observation_space.keys())}
     obs_space = Tuple(dummy_env.observation_space.values())
     act_space = Tuple(dummy_env.action_space.values())
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     register_env(
-        'grouped_pcgrl',
-        lambda config: wrappers.GroupedEnvironmentWrapper(make_env(config).with_agent_groups(
-            groups, obs_space=obs_space, act_space=act_space))
-        
+        "grouped_pcgrl",
+        lambda config: wrappers.GroupedEnvironmentWrapper(
+            make_env(config).with_agent_groups(
+                groups, obs_space=obs_space, act_space=act_space
+            )
+        ),
     )
 
 
@@ -559,42 +584,42 @@ def parse_qmix_config(
     # checkpoint_path_file,
     model_cfg,
     multiagent_config={},
-    **kwargs
-    ):
+    **kwargs,
+):
     # register grouped version of environment
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     make_grouped_env(config)
-    num_workers = kwargs.get('num_workers', 0)
-    num_envs_per_worker = kwargs.get('num_envs_per_worker', 1)
-    eval_num_workers = kwargs.get('num_workers', 0)
+    num_workers = kwargs.get("num_workers", 0)
+    num_envs_per_worker = kwargs.get("num_envs_per_worker", 1)
+    eval_num_workers = kwargs.get("num_workers", 0)
     return {
-        'env': 'grouped_pcgrl', # replace with grouped environment
-        'rollout_fragment_length': 1,
-        'train_batch_size': 32,
-        'framework': 'torch',
-        'num_workers': num_workers if not (config.evaluate or config.infer) else 0,
-        'num_gpus': 0, # config.hardware.n_gpu GPU's don't work for QMIX
-        'env_config': {
+        "env": "grouped_pcgrl",  # replace with grouped environment
+        "rollout_fragment_length": 1,
+        "train_batch_size": 32,
+        "framework": "torch",
+        "num_workers": num_workers if not (config.evaluate or config.infer) else 0,
+        "num_gpus": 0,  # config.hardware.n_gpu GPU's don't work for QMIX
+        "env_config": {
             **config,  # Maybe env should get its own config? (A subset of the original?)
             "evaluation_env": False,
         },
         #'mixer': 'qmix',
-        'num_envs_per_worker': num_envs_per_worker,
-        'render_env': config.render,
-        'lr': config.learning_rate,
-        'gamma': config.gamma,
-        'model': {
-            'custom_model': 'custom_model',
-            'custom_model_config': {
+        "num_envs_per_worker": num_envs_per_worker,
+        "render_env": config.render,
+        "lr": config.learning_rate,
+        "gamma": config.gamma,
+        "model": {
+            "custom_model": "custom_model",
+            "custom_model_config": {
                 "dummy_env_obs_space": copy.copy(agent_obs_space),
-            **model_cfg,
+                **model_cfg,
             },
         },
-        "evaluation_interval" : 1 if config.evaluate else 1,
+        "evaluation_interval": 1 if config.evaluate else 1,
         "evaluation_duration": max(1, num_workers),
         "evaluation_duration_unit": "episodes",
         "evaluation_num_workers": eval_num_workers,
-        #"env_task_fn": set_map_fn,
+        # "env_task_fn": set_map_fn,
         "evaluation_config": {
             "env_config": {
                 **config,
@@ -604,47 +629,42 @@ def parse_qmix_config(
             "explore": True,
         },
         "logger_config": {
-                # "wandb": {
-                    # "project": "PCGRL",
-                    # "name": exp_name_id,
-                    # "id": exp_name_id,
-                    # "api_key_file": "~/.wandb_api_key"
+            # "wandb": {
+            # "project": "PCGRL",
+            # "name": exp_name_id,
+            # "id": exp_name_id,
+            # "api_key_file": "~/.wandb_api_key"
             # },
             **logger_type,
             # Optional: Custom logdir (do not define this here
             # for using ~/ray_results/...).
             "logdir": log_dir,
         },
-#       "exploration_config": {
-#           "type": "Curiosity",
-#       }
-#       "log_level": "INFO",
+        #       "exploration_config": {
+        #           "type": "Curiosity",
+        #       }
+        #       "log_level": "INFO",
         # "train_batch_size": 50,
         # "sgd_minibatch_size": 50,
-        'callbacks': stats_callbacks,
-
+        "callbacks": stats_callbacks,
         # To take random actions while changing all tiles at once seems to invite too much chaos.
-        'explore': True,
-
+        "explore": True,
         # `ray.tune` seems to need these spaces specified here.
         # 'observation_space': dummy_env.observation_space,
         # 'action_space': dummy_env.action_space,
-
         # 'create_env_on_driver': True,
         # 'checkpoint_path_file': checkpoint_path_file,
         # 'record_env': log_dir,
         # 'stfu': True,
-        'disable_env_checking': True,
+        "disable_env_checking": True,
     }
 
 
-TrainerConfigParsers = {
-   'PPO': parse_ppo_config,
-   'QMIX': parse_qmix_config 
-}
+TrainerConfigParsers = {"PPO": parse_ppo_config, "QMIX": parse_qmix_config}
+
 
 def which_device():
-    """ Returns the device on which to run the model """
+    """Returns the device on which to run the model"""
     if torch.backends.mps.is_available():
         device = torch.device("mps")
     elif torch.cuda.is_available():

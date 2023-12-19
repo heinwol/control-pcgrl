@@ -19,5 +19,5 @@ def test_render(cfg: Config):
             env.render()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_render()

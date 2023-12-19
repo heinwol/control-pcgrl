@@ -42,11 +42,16 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class CrossEvalLauncherConf(LocalQueueConf):
-    _target_: str = "hydra_plugins.cross_eval_launcher_plugin.cross_eval_launcher.CrossEvalLauncher"
+    _target_: str = (
+        "hydra_plugins.cross_eval_launcher_plugin.cross_eval_launcher.CrossEvalLauncher"
+    )
 
 
 ConfigStore.instance().store(
-    group="hydra/launcher", name="cross-eval", node=CrossEvalLauncherConf, provider="hydra"
+    group="hydra/launcher",
+    name="cross-eval",
+    node=CrossEvalLauncherConf,
+    provider="hydra",
 )
 
 
@@ -80,6 +85,7 @@ class CrossEvalLauncher(BaseSubmititLauncher):
 
         # from cross_eval import cross_evaluate
         from control_pcgrl.rl.cross_eval import cross_evaluate
+
         cross_evaluate(self.config, sweep_configs, sweep_params)
 
         # Avoid unhappy hydra

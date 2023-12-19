@@ -19,136 +19,130 @@ from render_gifs import render_gifs
 
 GENERATIVE_ONLY_CROSS_EVAL = True
 exp_ids = [
-        0,
-#       1,
-#       2,
-#       3,
-#       4,
-#       5,
-#       6,
-#       7,
-#       8,
-#       9,
-#       10,
+    0,
+    #       1,
+    #       2,
+    #       3,
+    #       4,
+    #       5,
+    #       6,
+    #       7,
+    #       8,
+    #       9,
+    #       10,
 ]
 problems = [
-        "microstructure_ctrl"
-#       "face_ctrl",
-#       "loderunner_ctrl",
-#       "binary_ctrl",
-#       "zelda_ctrl",
-#       "sokoban_ctrl",
-#       "smb_ctrl"
-#       "loderunner_ctrl",
-#       "face_ctrl",
+    "microstructure_ctrl"
+    #       "face_ctrl",
+    #       "loderunner_ctrl",
+    #       "binary_ctrl",
+    #       "zelda_ctrl",
+    #       "sokoban_ctrl",
+    #       "smb_ctrl"
+    #       "loderunner_ctrl",
+    #       "face_ctrl",
 ]
 representations = [
-        "cellular",  # change entire board at each step
-#       "wide",  # agent "picks" one tile to change
-#       "narrow",  # scan over board in sequence, feed current tile to agent as observation
-#       "turtle"  # agent "moves" between adjacent tiles, give positional observation as in narrow, and agent has extra action channels corresponding to movement
+    "cellular",  # change entire board at each step
+    #       "wide",  # agent "picks" one tile to change
+    #       "narrow",  # scan over board in sequence, feed current tile to agent as observation
+    #       "turtle"  # agent "moves" between adjacent tiles, give positional observation as in narrow, and agent has extra action channels corresponding to movement
 ]
 models = [
-#   "NCA",
+    #   "NCA",
     "DirectBinaryEncoding",
     # "GenSinCPPN",
     # "GenCPPN",
-#   "Decoder",
+    #   "Decoder",
     # "DeepDecoder",
     # "GenCPPN2",
     # "GenSinCPPN2",
-#   "GenSin2CPPN2",
-#   "AuxNCA",  # NCA w/ additional/auxiliary "invisible" tile-channels to use as external memory
-#   "AttentionNCA",
-#   "CPPN",  # Vanilla CPPN. No latents. Only runs with n_init_states = 0
-#   "Sin2CPPN",
-
+    #   "GenSin2CPPN2",
+    #   "AuxNCA",  # NCA w/ additional/auxiliary "invisible" tile-channels to use as external memory
+    #   "AttentionNCA",
+    #   "CPPN",  # Vanilla CPPN. No latents. Only runs with n_init_states = 0
+    #   "Sin2CPPN",
     #   "CPPNCA",  # NCA followed by a traditional CPPN, not a fixed-size/continuous genome
-#   "DoneAuxNCA",  # AuxNCA but with one aux. channel to represent done-ness (agent decides when it's finished)
-#   "CoordNCA",  # NCA with additional channels corresponding to x and y coordinates
-
-#   "MixCPPN",
-#   "MixNCA",
-
-#   "GenReluCPPN",
-#   "GenMixCPPN",
-
-#   "FeedForwardCPPN",
-#   "SinCPPN",
+    #   "DoneAuxNCA",  # AuxNCA but with one aux. channel to represent done-ness (agent decides when it's finished)
+    #   "CoordNCA",  # NCA with additional channels corresponding to x and y coordinates
+    #   "MixCPPN",
+    #   "MixNCA",
+    #   "GenReluCPPN",
+    #   "GenMixCPPN",
+    #   "FeedForwardCPPN",
+    #   "SinCPPN",
     # "CNN"  # Doesn't learn atm
 ]
 # Reevaluate elites on new random seeds after inserting into the archive?
 fix_elites = [
-        True, 
-       ]
+    True,
+]
 # Fix a set of random levels with which to seed the generator, or use new ones each generation?
 fix_seeds = [
-        True,
-#       False
-        ]
+    True,
+    #       False
+]
 # How many random initial maps on which to evaluate each agent? (0 corresponds to a single layout with a square of wall
 # in the center)
 n_init_states_lst = [
-#   0,
-  1,
+    #   0,
+    1,
     # 10,
-#   20,
+    #   20,
 ]
 # How many steps in an episode of level editing?
 n_steps_lst = [
     1,
-#   10,
+    #   10,
     # 50,
-#   100,
+    #   100,
 ]
 global_bcs: List[List] = [
-      ["NONE", "NONE"], 
-#       ["emptiness", "symmetry"],
+    ["NONE", "NONE"],
+    #       ["emptiness", "symmetry"],
 ]
 local_bcs = {
     "binary_ctrl": [
-#       ["regions", "path-length"],
-#       ["emptiness", "path-length"],
+        #       ["regions", "path-length"],
+        #       ["emptiness", "path-length"],
         ["emptiness", "path-length"],
     ],
     "zelda_ctrl": [
-#       ["nearest-enemy", "path-length"],
-#       ["emptiness", "path-length"],
+        #       ["nearest-enemy", "path-length"],
+        #       ["emptiness", "path-length"],
         ["symmetry", "path-length"],
     ],
     "sokoban_ctrl": [
-#       ["crate", "sol-length"],
+        #       ["crate", "sol-length"],
         ["emptiness", "sol-length"],
-#       ["symmetry", "sol-length"],
+        #       ["symmetry", "sol-length"],
     ],
     "smb_ctrl": [
-       ["jumps", "sol-length"],
-       ["emptiness", "sol-length"],
-       ["symmetry", "sol-length"]
-       ],
+        ["jumps", "sol-length"],
+        ["emptiness", "sol-length"],
+        ["symmetry", "sol-length"],
+    ],
     "loderunner_ctrl": [
         ["emptiness", "path-length"],
-#       ["symmetry", "path-length"],
-#       ["emptiness", "path-length"],
+        #       ["symmetry", "path-length"],
+        #       ["emptiness", "path-length"],
         ["symmetry", "path-length"],
-#       ["win", "path-length"],
-#       ["gold", "emptiness"],
+        #       ["win", "path-length"],
+        #       ["gold", "emptiness"],
     ],
     "face_ctrl": [
-#       ["face_1", "brightness"],
-#       ['brightness', 'blur'],
-        ['brightness', 'entropy'],
-#       ['rand_sol', 'rand_sol']
+        #       ["face_1", "brightness"],
+        #       ['brightness', 'blur'],
+        ["brightness", "entropy"],
+        #       ['rand_sol', 'rand_sol']
     ],
     "microstructure_ctrl": [
         # ["emptiness", "path-length"],
         # ["path-length", "tortuosity"],
-    ]
+    ],
 }
 
 ###########################
-
-
 
 
 def launch_batch(exp_name, collect_params=False):
@@ -174,17 +168,14 @@ def launch_batch(exp_name, collect_params=False):
 
             for rep in representations:
                 for model in models:
-
                     if model == "CNN" and rep == "cellular":
                         # This would necessitate an explosive number of model params so we'll not run it
 
                         continue
 
                     for bc_pair in prob_bcs:
-
                         for fix_el in fix_elites:
                             for fix_seed in fix_seeds:
-
                                 # No reason to re-evaluate other than random seeds so this would cause an error
 
                                 if fix_seed and not fix_el:
@@ -200,7 +191,9 @@ def launch_batch(exp_name, collect_params=False):
 
                                     for n_init_states in n_init_states_lst:
                                         # The hand-made seed cannot be randomized
-                                        if n_init_states == 0 and not (fix_seed and fix_el):
+                                        if n_init_states == 0 and not (
+                                            fix_seed and fix_el
+                                        ):
                                             continue
 
                                         # The hand-made seed is not valid for Decoders (or CPPNs, handled below)
@@ -209,26 +202,43 @@ def launch_batch(exp_name, collect_params=False):
 
                                         # For the sake of cross-evaluating over model variable alone, do not look at
                                         # experiments treating models with generative capabilities as indirect encodings
-                                        if args.cross_eval and GENERATIVE_ONLY_CROSS_EVAL:
-                                            if n_init_states == 0 and not (model == "CPPN" or model == "Sin2CPPN" or model == "SinCPPN"):
+                                        if (
+                                            args.cross_eval
+                                            and GENERATIVE_ONLY_CROSS_EVAL
+                                        ):
+                                            if n_init_states == 0 and not (
+                                                model == "CPPN"
+                                                or model == "Sin2CPPN"
+                                                or model == "SinCPPN"
+                                            ):
                                                 continue
 
-                                        if model in ["CPPN", "GenCPPN", "GenCPPN2", "CPPNCA", "DirectBinaryEncoding"]:
+                                        if model in [
+                                            "CPPN",
+                                            "GenCPPN",
+                                            "GenCPPN2",
+                                            "CPPNCA",
+                                            "DirectBinaryEncoding",
+                                        ]:
                                             algo = "ME"
                                         else:
                                             algo = "CMAME"
 
-                                        if 'CPPN' in model:
-                                            if 'Gen' not in model and model != "CPPNCA":
+                                        if "CPPN" in model:
+                                            if "Gen" not in model and model != "CPPNCA":
                                                 # We could have more initial states, randomized initial states, and re-evaluated elites with generator-CPPNs
-                                                if n_init_states != 0 or not fix_seed or not fix_el:
+                                                if (
+                                                    n_init_states != 0
+                                                    or not fix_seed
+                                                    or not fix_el
+                                                ):
                                                     continue
 
                                             if model != "CPPNCA" and n_steps != 1:
                                                 continue
 
                                         # The decoder generates levels in a single pass (from a smaller latent)
-                                        if 'Decoder' in model and n_steps != 1:
+                                        if "Decoder" in model and n_steps != 1:
                                             continue
 
                                         # Edit the sbatch file to load the correct config file
@@ -248,7 +258,8 @@ def launch_batch(exp_name, collect_params=False):
                                             f.write(new_content)
                                         # Write the config file with the desired settings
                                         exp_config = copy.deepcopy(default_config)
-                                        exp_config.update({
+                                        exp_config.update(
+                                            {
                                                 "problem": prob,
                                                 "representation": rep,
                                                 "behavior_characteristics": bc_pair,
@@ -256,7 +267,7 @@ def launch_batch(exp_name, collect_params=False):
                                                 "model": model,
                                                 "fix_elites": fix_el,
                                                 "fix_level_seeds": fix_seed,
-#                                               "exp_name": exp_name,
+                                                #                                               "exp_name": exp_name,
                                                 "exp_name": str(exp_id),
                                                 "save_levels": False,
                                                 "n_steps": n_steps,
@@ -276,9 +287,13 @@ def launch_batch(exp_name, collect_params=False):
 
                                         elif EVALUATE:
                                             # No real point a mapping that takes only one-step (unless we're debugging latent seeds, in which case just use more steps)
-                                            render_levels = RENDER_LEVELS and n_steps > 1
+                                            render_levels = (
+                                                RENDER_LEVELS and n_steps > 1
+                                            )
                                             # ... Also, because this isn't compatible with qdpy at the moment
-                                            render_levels = RENDER_LEVELS and algo != "ME"
+                                            render_levels = (
+                                                RENDER_LEVELS and algo != "ME"
+                                            )
                                             exp_config.update(
                                                 {
                                                     "infer": True,
@@ -292,21 +307,27 @@ def launch_batch(exp_name, collect_params=False):
                                             "Saving experiment config:\n{}".format(
                                                 exp_config
                                             )
-                                         )
+                                        )
                                         with open(
-                                            "configs/evo/settings_{}.json".format(i), "w"
+                                            "configs/evo/settings_{}.json".format(i),
+                                            "w",
                                         ) as f:
                                             json.dump(
-                                                exp_config, f, ensure_ascii=False, indent=4
+                                                exp_config,
+                                                f,
+                                                ensure_ascii=False,
+                                                indent=4,
                                             )
                                         # Launch the experiment. It should load the saved settings
 
                                         if collect_params:
                                             settings_list.append(exp_config)
                                         elif LOCAL:
-                                            os.system("python evolve.py -la {}".format(i))
+                                            os.system(
+                                                "python evolve.py -la {}".format(i)
+                                            )
                                             # Turned off for mid-training evals
-#                                           os.system("ray stop")
+                                        #                                           os.system("ray stop")
                                         else:
                                             os.system("sbatch {}".format(script_name))
                                         i += 1
@@ -383,10 +404,14 @@ if __name__ == "__main__":
     if args.cross_eval:
         compile_results(settings_list, tex=args.tex)
         if not args.tex:
-            print("Produced html at evo_runs/cross_eval_{}.html".format(args.experiment_name))
+            print(
+                "Produced html at evo_runs/cross_eval_{}.html".format(
+                    args.experiment_name
+                )
+            )
         else:
-            os.chdir('eval_experiment')
-            os.system(f'pdflatex tables.tex')
+            os.chdir("eval_experiment")
+            os.system(f"pdflatex tables.tex")
     elif args.gif:
         render_gifs(settings_list)
     else:

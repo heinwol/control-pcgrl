@@ -17,11 +17,13 @@ class ZeldaCtrlProblem(ZeldaProblem):
     def __init__(self, cfg: Config):
         super(ZeldaCtrlProblem, self).__init__(cfg=cfg)
         self._max_nearest_enemy = np.ceil(self._width / 2 + 1) * (self._height)
-        #FIXME lmao this is half what it should be. Seennndddiiinggg me!! :~)
+        # FIXME lmao this is half what it should be. Seennndddiiinggg me!! :~)
         # TODO: Do not assume it's a square
         # Twice the optimal zig-zag minus one for the end-point at which the player turns around
-        self._max_path_length = (np.ceil(self._width / 2) * (self._height) + np.floor(self._height / 2)) * 2 - 1
-#       self._max_path_length = np.ceil(self._width / 2 + 1) * (self._height)
+        self._max_path_length = (
+            np.ceil(self._width / 2) * (self._height) + np.floor(self._height / 2)
+        ) * 2 - 1
+        #       self._max_path_length = np.ceil(self._width / 2 + 1) * (self._height)
         # like "_reward_weights" but for use with ParamRew
         self._reward_weights = {
             "player": 3,
@@ -151,18 +153,22 @@ class ZeldaCtrlProblem(ZeldaProblem):
                 map_stats["path-length"] += dijkstra_d[d_y][d_x]
 
                 if self.render_path:  # and map_stats["regions"] == 1:
-                    self.path = np.vstack((get_path_coords(dijkstra_k, init_coords=(k_y, k_x))[:],
-                        get_path_coords(dijkstra_d, init_coords=(d_y, d_x))[:]))
+                    self.path = np.vstack(
+                        (
+                            get_path_coords(dijkstra_k, init_coords=(k_y, k_x))[:],
+                            get_path_coords(dijkstra_d, init_coords=(d_y, d_x))[:],
+                        )
+                    )
                     front_tiles = set(((k_x, k_y), (d_x, d_y), (p_x, p_y)))
                     i = 0
                     render_path = self.path.copy()
                     # slice out any tiles that need to be visualized "in front of" the path (then trim the path as needed)
-                    for (y, x) in self.path:
+                    for y, x in self.path:
                         if (x, y) in front_tiles:
                             continue
                         render_path[i] = [y, x]
                         i += 1
                     self.path = render_path[:i]
-        self.path_length = map_stats['path-length']
+        self.path_length = map_stats["path-length"]
 
         return map_stats

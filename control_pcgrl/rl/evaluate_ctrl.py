@@ -23,7 +23,7 @@ from control_pcgrl.rl.utils import (
     get_log_dir,
     load_model,
     PROB_CONTROLS,
-#   max_exp_idx,
+    #   max_exp_idx,
 )
 
 DPI = 100
@@ -36,7 +36,7 @@ bottomLeftCornerOfText = (10, 500)
 fontScale = 1
 fontColor = (255, 255, 255)
 lineType = 2
-plt.rcParams.update({'font.size': 13})
+plt.rcParams.update({"font.size": 13})
 
 
 def div_calc(tokens):
@@ -50,8 +50,8 @@ def div_calc(tokens):
 
 def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     """
-     - max_trials: The number of trials per evaluation.
-     - infer_kwargs: Args to pass to the environment.
+    - max_trials: The number of trials per evaluation.
+    - infer_kwargs: Args to pass to the environment.
     """
     global N_BINS
     global N_MAPS
@@ -59,8 +59,8 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
 
     infer_kwargs = {**infer_kwargs, "inference": True, "evaluate": True}
     #   max_trials = kwargs.get("max_trials", -1)
-#   n = kwargs.get("n", None)
-    exp_id = infer_kwargs.get('exp_id')
+    #   n = kwargs.get("n", None)
+    exp_id = infer_kwargs.get("exp_id")
     #   map_width = infer_kwargs.get("map_width")
     max_steps = infer_kwargs.get("max_step")
     eval_controls = infer_kwargs.get("eval_controls")
@@ -69,30 +69,30 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     exp_name = get_log_dir(game, representation, **kwargs)
     levels_im_name = "{}_{}-bins_levels.png"
 
-#   if n is None:
-#       if EXPERIMENT_ID is None:
-#           n = max_exp_idx(exp_name)
-#           print(
-#               "Experiment index not specified, setting index automatically to {}".format(
-#                   n
-#               )
-#           )
-#       else:
-#           n = EXPERIMENT_ID
+    #   if n is None:
+    #       if EXPERIMENT_ID is None:
+    #           n = max_exp_idx(exp_name)
+    #           print(
+    #               "Experiment index not specified, setting index automatically to {}".format(
+    #                   n
+    #               )
+    #           )
+    #       else:
+    #           n = EXPERIMENT_ID
 
-#   if n == 0:
-#       raise Exception(
-#           "Did not find ranked saved model of experiment: {}".format(exp_name)
-#       )
+    #   if n == 0:
+    #       raise Exception(
+    #           "Did not find ranked saved model of experiment: {}".format(exp_name)
+    #       )
     crop_shape = infer_kwargs.get("crop_shape")
 
     # if crop_size == -1:
     #     infer_kwargs["crop_size"] = get_crop_size(game)
-    log_dir = os.path.join(EXPERIMENT_DIR, '{}_{}_log'.format(exp_name, exp_id))
-    eval_dir = os.path.join(log_dir, 'eval')
+    log_dir = os.path.join(EXPERIMENT_DIR, "{}_{}_log".format(exp_name, exp_id))
+    eval_dir = os.path.join(log_dir, "eval")
     if not os.path.isdir(eval_dir):
         os.mkdir(eval_dir)
-#   log_dir = "{}/{}_{}_log".format(EXPERIMENT_DIR, exp_name, exp_id)
+    #   log_dir = "{}/{}_{}_log".format(EXPERIMENT_DIR, exp_name, exp_id)
     data_path = os.path.join(eval_dir, "{}_{}_eval_data".format(N_BINS, eval_controls))
     data_path_levels = os.path.join(eval_dir, "{}_eval_data_levels".format(N_BINS))
     if fix_trgs:
@@ -102,23 +102,23 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     data_path_levels += ".pkl"
 
     if VIS_ONLY:
-#       if RENDER_LEVELS:
-#           eval_data_levels = pickle.load(open(data_path_levels, "rb"))
-#           eval_data_levels.render_levels()
+        #       if RENDER_LEVELS:
+        #           eval_data_levels = pickle.load(open(data_path_levels, "rb"))
+        #           eval_data_levels.render_levels()
 
-#           return
+        #           return
         eval_data = pickle.load(open(data_path, "rb"))
         # FIXME: just for backward compatibility
         eval_data.eval_dir = eval_dir
         eval_data.visualize_data(eval_dir, fix_trgs)
         eval_data.render_levels()
-#       eval_data.hamming_heatmap(None, eval_data.div_scores)
+        #       eval_data.hamming_heatmap(None, eval_data.div_scores)
 
         return
     # no log dir, 1 parallel environment
     n_cpu = infer_kwargs.get("n_cpu")
-    if 'path-length' in eval_controls or not eval_controls:
-        infer_kwargs['render_path'] = True
+    if "path-length" in eval_controls or not eval_controls:
+        infer_kwargs["render_path"] = True
     env, dummy_action_space, n_tools = make_vec_envs(
         env_name, representation, None, **infer_kwargs
     )
@@ -140,7 +140,7 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     #           }
 
     if n_cpu == 1:
-#       control_bounds = env.envs[0].get_control_bounds()
+        #       control_bounds = env.envs[0].get_control_bounds()
         # control_bounds = env.get_control_bounds()
         control_bounds = env.cond_bounds
     elif n_cpu > 1:
@@ -158,16 +158,16 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     ctrl_bounds = []
     for k in eval_controls:
         bounds = control_bounds[k]
-        if 'path-length' in k:
-            if 'zelda' in game:
+        if "path-length" in k:
+            if "zelda" in game:
                 bounds = (3, bounds[1])
             else:
                 bounds = (1, bounds[1])
-        if 'nearest-enemy' in k:
+        if "nearest-enemy" in k:
             bounds = (1, bounds[1])
-        if 'sol-length' in k:
+        if "sol-length" in k:
             bounds = (1, bounds[1])
-        if 'regions' in k:
+        if "regions" in k:
             bounds = (1, bounds[1])
         ctrl_bounds.append((k, bounds))
 
@@ -188,7 +188,7 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     levels_y_labels = []
 
     def eval_static_trgs():
-        '''Run an evaluation on the default values for all level metrics. For both controllable and vanilla agents. 
+        '''Run an evaluation on the default values for all level metrics. For both controllable and vanilla agents.
         The latter's "home turf."'''
         N_BINS = None
         level_images = []
@@ -198,10 +198,10 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
         cell_ctrl_scores = np.zeros(shape=(1, 1, N_EVALS))
         level_tokens = None
 
-#       if DIVERSITY_EVAL:
-#           n_row = 1
-#           n_col = 1
-#       else:
+        #       if DIVERSITY_EVAL:
+        #           n_row = 1
+        #           n_col = 1
+        #       else:
         n_row = 2
         n_col = 5
 
@@ -209,7 +209,13 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
             level_images_y = []
 
             for j in range(n_col):
-                net_score, ctrl_score, static_score, level_image, tokens = eval_episodes(
+                (
+                    net_score,
+                    ctrl_score,
+                    static_score,
+                    level_image,
+                    tokens,
+                ) = eval_episodes(
                     model,
                     env,
                     N_EVALS,
@@ -221,9 +227,9 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
                 )
                 level_images_y.append(level_image)
                 cell_scores[0, 0, :] = net_score
-                div_score = np.sum(
-                    [np.sum(a != b) for a in tokens for b in tokens]
-                ) / (len(tokens) * (len(tokens) - 1))
+                div_score = np.sum([np.sum(a != b) for a in tokens for b in tokens]) / (
+                    len(tokens) * (len(tokens) - 1)
+                )
                 div_score = div_score / (map_width * map_width)
                 div_scores[0, 0] = div_score
 
@@ -231,11 +237,16 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
 
         image = np.vstack(level_images[::-1])
         image = Image.fromarray(image)
-        image.save(
-            os.path.join(eval_dir, levels_im_name.format(ctrl_names, N_BINS))
-        )
+        image.save(os.path.join(eval_dir, levels_im_name.format(ctrl_names, N_BINS)))
 
-        return cell_scores, cell_static_scores, cell_ctrl_scores, div_scores, level_tokens, image
+        return (
+            cell_scores,
+            cell_static_scores,
+            cell_ctrl_scores,
+            div_scores,
+            level_tokens,
+            image,
+        )
 
     if len(ctrl_bounds) == 0:
         # If we didn't train with controls, we'll evaluate inside a grid of targets (on the controllable agents' turf)
@@ -247,7 +258,14 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     if fix_trgs:
         ctrl_names = None
         ctrl_ranges = None
-        cell_scores, cell_static_scores, cell_ctrl_scores, div_scores, level_tokens, image = eval_static_trgs()
+        (
+            cell_scores,
+            cell_static_scores,
+            cell_ctrl_scores,
+            div_scores,
+            level_tokens,
+            image,
+        ) = eval_static_trgs()
 
     elif len(ctrl_bounds) == 1:
         ctrl_name = ctrl_bounds[0][0]
@@ -319,7 +337,13 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
                 trg_dict.update(ctrl_trg_dict)
                 print("evaluating control targets: {}".format(trg_dict))
                 #           set_ctrl_trgs(env, {ctrl_name: trg})
-                net_score, ctrl_score, static_score, level_image, tokens = eval_episodes(
+                (
+                    net_score,
+                    ctrl_score,
+                    static_score,
+                    level_image,
+                    tokens,
+                ) = eval_episodes(
                     model,
                     env,
                     N_EVALS,
@@ -371,33 +395,33 @@ def evaluate(game, representation, infer_kwargs, fix_trgs=False, **kwargs):
     pickle.dump(eval_data, open(data_path, "wb"))
     eval_data.visualize_data(eval_dir, fix_trgs)
 
-#   else:
-#       levels_im_path = os.path.join(
-#           eval_dir, levels_im_name.format(ctrl_names, N_BINS)
-#       )
-#       eval_data_levels = EvalData(
-#           ctrl_names,
-#           ctrl_ranges,
-#           cell_scores,
-#           cell_ctrl_scores,
-#           cell_static_scores,
-#           div_scores=div_scores,
-#           eval_dir=eval_dir,
-#           levels_image=image,
-#           levels_im_path=levels_im_path,
-#       )
-#       pickle.dump(eval_data_levels, open(data_path_levels, "wb"))
+    #   else:
+    #       levels_im_path = os.path.join(
+    #           eval_dir, levels_im_name.format(ctrl_names, N_BINS)
+    #       )
+    #       eval_data_levels = EvalData(
+    #           ctrl_names,
+    #           ctrl_ranges,
+    #           cell_scores,
+    #           cell_ctrl_scores,
+    #           cell_static_scores,
+    #           div_scores=div_scores,
+    #           eval_dir=eval_dir,
+    #           levels_image=image,
+    #           levels_im_path=levels_im_path,
+    #       )
+    #       pickle.dump(eval_data_levels, open(data_path_levels, "wb"))
     if not fix_trgs:
         eval_data.render_levels()
 
     if DIVERSITY_EVAL:
-#       eval_data = eval_data
+        #       eval_data = eval_data
 
         if fix_trgs:
             eval_data.save_stats(div_scores=div_scores, fix_trgs=fix_trgs)
         else:
             pass
-#           eval_data.hamming_heatmap(level_tokens, div_scores=div_scores)
+    #           eval_data.hamming_heatmap(level_tokens, div_scores=div_scores)
 
     env.close()
 
@@ -436,8 +460,8 @@ def eval_episodes(
 
             action, _ = model.predict(obs)
             obs, rewards, done, info = env.step(action)
-#           if done: 
-#               pass
+            #           if done:
+            #               pass
             i += 1
         # print('total episode steps:', i)
         final_loss = env.get_loss()
@@ -450,9 +474,7 @@ def eval_episodes(
             if SC and i == max_steps - 1:
                 # FIXME lmao fucking stupid as all heck (wait is this the right directory? No)
                 im_path = os.path.join(eval_dir, "{}_level.png".format(trg_dict))
-                image = env.win1.editMapView.buffer.write_to_png(
-                    im_path
-                )
+                image = env.win1.editMapView.buffer.write_to_png(im_path)
                 em = env.win1.editMapView
                 image = Image.open(im_path)
                 image = np.array(image)
@@ -470,9 +492,7 @@ def eval_episodes(
             curr_tokens = env.state.argmax(axis=0)
         elif RCT:
             curr_tokens = env.rct_env.park.map[0]
-    #           epi_reward_weights[i] = rewards
-
-
+        #           epi_reward_weights[i] = rewards
 
         #       print('final loss, net: {}, static: {}, ctrl: {}'.format(final_loss, final_static_loss, final_ctrl_loss))
         # what percentage of loss (distance from target) was recovered?
@@ -498,7 +518,7 @@ def eval_episodes(
 
     if RENDER_LEVELS and not SC:
         # we hackishly save it for SC up above already
-#       image.save(os.path.join(eval_dir, "{}_level.png".format(trg_dict)))
+        #       image.save(os.path.join(eval_dir, "{}_level.png".format(trg_dict)))
         level_image = asarray(image)
     else:
         level_image = None
@@ -537,8 +557,8 @@ class EvalData:
         if self.ctrl_names:
             self.ctrl_names = list(self.ctrl_names)
             for i, cn in enumerate(self.ctrl_names):
-                if cn == 'sol-length':
-                    self.ctrl_names[i] = 'solution-length'
+                if cn == "sol-length":
+                    self.ctrl_names[i] = "solution-length"
 
     def visualize_data(self, eval_dir, fix_trgs):
         self.save_stats(div_scores=self.div_scores, fix_trgs=fix_trgs)
@@ -546,7 +566,7 @@ class EvalData:
         if fix_trgs:
             return
 
-        def create_heatmap(title, cbar_label, data, vrange=(0,100), cmap_name=None):
+        def create_heatmap(title, cbar_label, data, vrange=(0, 100), cmap_name=None):
             data = data * 100
             data = np.clip(data, -100, 100)
             if vrange is None:
@@ -591,13 +611,12 @@ class EvalData:
             #           im = ax.imshow(data, aspect='auto', vmin=-100, vmax=100)
 
             if not BAR_CHART or data.shape[1] != 1:
-
                 # Create colorbar
                 if cmap_name:
                     cmap = plt.get_cmap(cmap_name)
                 else:
                     cmap = None
-#                   cmap = colors.ListedColormap(["b", "r", "y", "r"])
+                #                   cmap = colors.ListedColormap(["b", "r", "y", "r"])
                 im = ax.imshow(data, aspect="auto", vmin=vmin, vmax=vmax, cmap=cmap)
                 cbar = ax.figure.colorbar(im, ax=ax)
                 # cbar.ax.set_ylabel("", rotation=90, va="bottom")
@@ -638,7 +657,7 @@ class EvalData:
         title = "Controlled goals"
         create_heatmap(title, cbar_label, cell_ctrl_scores.mean(-1))
 
-#       title = "Fixed goals: {}".format(', '.join(self.static_names))
+        #       title = "Fixed goals: {}".format(', '.join(self.static_names))
         title = "Fixed goals"
         create_heatmap(title, cbar_label, cell_static_scores.mean(-1))
 
@@ -647,7 +666,9 @@ class EvalData:
             cbar_label = "per-tile \ndifference (%)"
         else:
             cbar_label = "per-tile difference (%)"
-        create_heatmap(title, cbar_label, self.div_scores, vrange=None, cmap_name="inferno")
+        create_heatmap(
+            title, cbar_label, self.div_scores, vrange=None, cmap_name="inferno"
+        )
 
     def pairwise_hamming(self, a, b):
         return np.sum(a != b)
@@ -677,10 +698,10 @@ class EvalData:
 
     def render_levels(self):
         ctrl_names = self.ctrl_names
-        if 'sokoban_ctrl' in self.eval_dir:
-            plt.rcParams.update({'font.size': 10})
+        if "sokoban_ctrl" in self.eval_dir:
+            plt.rcParams.update({"font.size": 10})
         else:
-            plt.rcParams.update({'font.size': 22})
+            plt.rcParams.update({"font.size": 22})
         if ctrl_names[1] is not None:
             fig, ax = plt.subplots()
             fig.set_figwidth(np.array(self.levels_image).shape[0] / DPI)
@@ -703,9 +724,13 @@ class EvalData:
             # wHut???
             im_width = np.array(self.levels_image).shape[1] / self.cell_scores.shape[0]
             plt.xticks(
-                (np.arange(N_LVL_BINS) * im_width + im_width / 2) * (N_BINS[-1] / N_LVL_BINS),
+                (np.arange(N_LVL_BINS) * im_width + im_width / 2)
+                * (N_BINS[-1] / N_LVL_BINS),
                 # np.arange(N_LVL_BINS) * (im_width * LVL_RENDER_INTERVAL) + im_width / 2,
-                labels=[int(round(self.ctrl_ranges[0][i * LVL_RENDER_INTERVAL], 0)) for i in range(N_LVL_BINS)],
+                labels=[
+                    int(round(self.ctrl_ranges[0][i * LVL_RENDER_INTERVAL], 0))
+                    for i in range(N_LVL_BINS)
+                ],
             )
             pad_inches = 0
             hspace = 0
@@ -720,12 +745,14 @@ class EvalData:
             im_height = np.array(self.levels_image).shape[0] / self.cell_scores.shape[0]
             n_x_lvls = len(self.levels_y_labels)
             plt.xticks(
-                (np.arange(n_x_lvls) * im_width + im_width / 2) * (N_BINS[-1] / N_LVL_BINS),
-                labels=[int(round(i, 0)) for i in self.levels_y_labels]
+                (np.arange(n_x_lvls) * im_width + im_width / 2)
+                * (N_BINS[-1] / N_LVL_BINS),
+                labels=[int(round(i, 0)) for i in self.levels_y_labels],
             )
             n_y_lvls = len(self.levels_x_labels)
             plt.yticks(
-                (np.arange(n_y_lvls) * im_height + im_height / 2) * (N_BINS[-1] / N_LVL_BINS),
+                (np.arange(n_y_lvls) * im_height + im_height / 2)
+                * (N_BINS[-1] / N_LVL_BINS),
                 labels=[int(round(i, 0)) for i in self.levels_x_labels][::-1],
             )
             #           ax.set_xticklabels([round(x, 1) for x in ctrl_ranges[0]])
@@ -743,9 +770,15 @@ class EvalData:
         # plt.gca().xaxis.set_major_locator(plt.NullLocator())
         # plt.gca().yaxis.set_major_locator(plt.NullLocator())
         # plt.savefig(self.levels_im_path, bbox_inches="tight", pad_inches=pad_inches, dpi=DPI)
-        plt.savefig(self.levels_im_path.replace('.png', '.svg'), bbox_inches="tight", pad_inches=pad_inches, format='svg', dpi=DPI)
+        plt.savefig(
+            self.levels_im_path.replace(".png", ".svg"),
+            bbox_inches="tight",
+            pad_inches=pad_inches,
+            format="svg",
+            dpi=DPI,
+        )
         # plt.show()
-        plt.rcParams.update({'font.size': 13})
+        plt.rcParams.update({"font.size": 13})
 
 
 # NOTE: let's not try multiproc how about that :~)
@@ -861,7 +894,7 @@ alp_gmm = opts.alp_gmm
 train_change_percentage = opts.change_percentage
 # Ignore change percentage, we care only about reaching targets or hitting a max number of steps
 infer_change_percentage = 1
-# TODO: properly separate these kwarg dictionaries, so that one is for loading (specifying training run 
+# TODO: properly separate these kwarg dictionaries, so that one is for loading (specifying training run
 # hyperparameters), and the other is for inference (what settings to evaluate with)
 if conditional:
     max_step = opts.max_step
@@ -889,14 +922,14 @@ kwargs = {
     # 'n': 4, # rank of saved experiment (by default, n is max possible)
 }
 
-#RENDER_LEVELS = opts.render_levels
+# RENDER_LEVELS = opts.render_levels
 RENDER_LEVELS = True
 DIVERSITY_EVAL = True
 
 map_width = get_map_width(problem)
-#if problem == "sokobangoal":
+# if problem == "sokobangoal":
 #    map_width = 5
-#else:
+# else:
 #    map_width = 16
 
 # For inference
@@ -932,20 +965,19 @@ N_MAPS = opts.n_maps
 #   N_TRIALS = opts.n_trials
 
 if __name__ == "__main__":
-
     # Evaluate controllability
     # Evaluate fixed quality of levels, or controls at default targets
-#   if not VIS_ONLY:
-#       evaluate(problem, representation, infer_kwargs, fix_trgs=True, **kwargs)
-#   if not conditional:
+    #   if not VIS_ONLY:
+    #       evaluate(problem, representation, infer_kwargs, fix_trgs=True, **kwargs)
+    #   if not conditional:
     control_sets = PROB_CONTROLS[problem]
     for i, eval_ctrls in enumerate(control_sets):
         # Then evaluate over some default controls (otherwise use those that we trained on)
         # TODO: for each experiment, repeat for a set of control-sets
-#       cond_metrics = set(infer_kwargs.get('cond_metrics'))
-#       cond_metrics.update(set(eval_ctrls))
-#       cond_metrics = [e for e in cond_metrics]
-        infer_kwargs.update({'eval_controls': eval_ctrls, 'cond_metrics': cond_metrics})
+        #       cond_metrics = set(infer_kwargs.get('cond_metrics'))
+        #       cond_metrics.update(set(eval_ctrls))
+        #       cond_metrics = [e for e in cond_metrics]
+        infer_kwargs.update({"eval_controls": eval_ctrls, "cond_metrics": cond_metrics})
         evaluate(problem, representation, infer_kwargs, fix_trgs=False, **kwargs)
 #   else:
 #           evaluate(problem, representation, infer_kwargs, fix_trgs=False, **kwargs)

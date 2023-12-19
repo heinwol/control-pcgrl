@@ -3,7 +3,7 @@ import pathlib
 from pdb import set_trace as TT
 import os
 import sys
-import argparse 
+import argparse
 import json
 
 
@@ -166,8 +166,8 @@ def get_args(load_args=None):
         default=1.00,
     )
     opts.add_argument(
-        '--n_aux_chan',
-        help='Number of auxiliary channels for NCA-type hidden activations.',
+        "--n_aux_chan",
+        help="Number of auxiliary channels for NCA-type hidden activations.",
         type=int,
         default=0,
     )
@@ -176,7 +176,7 @@ def get_args(load_args=None):
     opts.add_argument(
         "--render_profiling",
         action="store_true",
-        help="If true, you will get see how long on average it takes to render given level. Slows down the evaluation procedure."
+        help="If true, you will get see how long on average it takes to render given level. Slows down the evaluation procedure.",
     )
 
     args = opts.parse_args()
@@ -261,12 +261,19 @@ def get_exp_name(args=None, arg_dict=None):
     #       PROBLEM, REPRESENTATION, MODEL, BCS, N_INIT_STATES
     #   )
     exp_name = ""
-    if arg_dict['algo'] == "ME":
+    if arg_dict["algo"] == "ME":
         exp_name += "ME_"
-    exp_name += f"{PROBLEM}-{REPRESENTATION}_{MODEL}_{BCS}_{N_INIT_STATES}-batch_{N_STEPS}-pass"
+    exp_name += (
+        f"{PROBLEM}-{REPRESENTATION}_{MODEL}_{BCS}_{N_INIT_STATES}-batch_{N_STEPS}-pass"
+    )
 
     # TODO: remove this! Ad hoc, for backward compatibility.
-    if arg_dict["algo"] == "CMAME" and arg_dict["step_size"] != 1 or arg_dict["algo"] == "ME" and arg_dict["step_size"] != 0.01:
+    if (
+        arg_dict["algo"] == "CMAME"
+        and arg_dict["step_size"] != 1
+        or arg_dict["algo"] == "ME"
+        and arg_dict["step_size"] != 0.01
+    ):
         exp_name += f"_{arg_dict['step_size']}-stepSize"
 
     if CASCADE_REWARD:
@@ -278,12 +285,15 @@ def get_exp_name(args=None, arg_dict=None):
     if not REEVALUATE_ELITES:
         exp_name += "_fixElites"
 
-    if arg_dict['n_aux_chan'] > 0:
+    if arg_dict["n_aux_chan"] > 0:
         exp_name += f"_{arg_dict['n_aux_chan']}-aux"
 
     exp_name += "_" + arg_dict["exp_name"]
     return exp_name
 
+
 def get_exp_dir(exp_name):
-    evo_runs_dir = os.path.join(pathlib.Path(__file__).parent.parent.resolve(), 'evo_runs')
+    evo_runs_dir = os.path.join(
+        pathlib.Path(__file__).parent.parent.resolve(), "evo_runs"
+    )
     return os.path.join(evo_runs_dir, exp_name)

@@ -16,7 +16,7 @@ class StatsCallbacks(DefaultCallbacks):
     def __init__(self, cfg, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metrics_callback = {}
-        self.holey = 'holey' in cfg.task.name
+        self.holey = "holey" in cfg.task.name
 
     def on_episode_start(
         self,
@@ -26,7 +26,7 @@ class StatsCallbacks(DefaultCallbacks):
         policies: Dict[str, Policy],
         episode: Episode,
         env_index: int,
-        **kwargs
+        **kwargs,
     ):
         env = base_env.get_sub_environments()[env_index]
         # Make sure this episode has just been started (only initial obs
@@ -36,20 +36,27 @@ class StatsCallbacks(DefaultCallbacks):
             "after env reset!"
         )
         for k in env.ctrl_metrics:
-            episode.hist_data.update({
-                f'{k}-trg': None,
-            })
+            episode.hist_data.update(
+                {
+                    f"{k}-trg": None,
+                }
+            )
         for k in env.metrics:
-            if k == 'solution':
+            if k == "solution":
                 continue
-            episode.hist_data.update({f'{k}-val': None,
-        })
+            episode.hist_data.update(
+                {
+                    f"{k}-val": None,
+                }
+            )
 
         if self.holey:
-            episode.hist_data.update({
-                'holes_start': None,
-                'holes_end': None,
-            })
+            episode.hist_data.update(
+                {
+                    "holes_start": None,
+                    "holes_end": None,
+                }
+            )
 
     def on_episode_end(
         self,
@@ -59,7 +66,7 @@ class StatsCallbacks(DefaultCallbacks):
         policies: Dict[PolicyID, Policy],
         episode: Episode,
         env_index: int,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Runs when an episode is done.
 
@@ -84,61 +91,80 @@ class StatsCallbacks(DefaultCallbacks):
         #     regions.append(env.unwrapped._rep_stats['regions'])
         #     connectivities.append(env.unwrapped._rep_stats['connectivity'])
         #     path_lengths.append(env.unwrapped._rep_stats['path-length'])
-        
+
         # episode_stats = {
         #     'regions': np.mean(regions),
         #     'connectivity': np.mean(connectivities),
         #     'path-length': np.mean(path_lengths),
         # }
         env = base_env.get_sub_environments()[env_index]
-        unwrapped = env._unwrapped if hasattr(env, '_unwrapped') else env.unwrapped
+        unwrapped = env._unwrapped if hasattr(env, "_unwrapped") else env.unwrapped
         episode_stats = unwrapped._rep_stats
-        
 
         # stats_list = ['regions', 'connectivity', 'path-length']
         # write to tensorboard file (if enabled)
         # episode.hist_data.update({k: [v] for k, v in episode_stats.items()})
-        episode.custom_metrics.update({k: [v] for k, v in episode_stats.items() if k != 'solution'})
-        
+        episode.custom_metrics.update(
+            {k: [v] for k, v in episode_stats.items() if k != "solution"}
+        )
 
         # TODO: log ctrl targets and success rate as heatmap: x is timestep, y is ctrl target, heatmap is success rate
 
         for k in env.ctrl_metrics:
             # episode.ctrl_metrics = {f'ctrl-{k}': {env.metric_trgs[k]: env.metrics[k]}}
-            episode.hist_data.update({
-                f'{k}-trg': [env.metric_trgs[k]],  # rllib needs these values to be lists :)
-            })
+            episode.hist_data.update(
+                {
+                    f"{k}-trg": [
+                        env.metric_trgs[k]
+                    ],  # rllib needs these values to be lists :)
+                }
+            )
         for k in env.metrics:
             # avoid adding non-numeric values
-            #if isinstance(env.metrics[k], int) or isinstance(env.metrics[k], float):
-            if k == 'solution':
+            # if isinstance(env.metrics[k], int) or isinstance(env.metrics[k], float):
+            if k == "solution":
                 continue
-            episode.hist_data.update({f'{k}-val': [env.metrics[k]],})
+            episode.hist_data.update(
+                {
+                    f"{k}-val": [env.metrics[k]],
+                }
+            )
 
         # episode.hist_data.update({k: [v] for k, v in episode_stats.items() if k in stats_list})
         # episode.custom_metrics.update({k: [v] for k, v in episode_stats.items() if k in stats_list})
 
-        if hasattr(unwrapped._prob, '_hole_queue'):
-            entrance_coords, exit_coords = env.unwrapped._prob.entrance_coords, env.unwrapped._prob.exit_coords
+        if hasattr(unwrapped._prob, "_hole_queue"):
+            entrance_coords, exit_coords = (
+                env.unwrapped._prob.entrance_coords,
+                env.unwrapped._prob.exit_coords,
+            )
             if len(entrance_coords.shape) == 1:
                 # Then it's 2D.
-                episode.hist_data.update({
-                    'holes_start': [entrance_coords],
-                    'holes_end': [exit_coords],
-                })
+                episode.hist_data.update(
+                    {
+                        "holes_start": [entrance_coords],
+                        "holes_end": [exit_coords],
+                    }
+                )
             else:
                 # Just record the foot-room if 3D
-                episode.hist_data.update({
-                    'holes_start': [tuple(unwrapped._prob.entrance_coords[0])],
-                    'holes_end': [tuple(unwrapped._prob.exit_coords[0])],
-                })
+                episode.hist_data.update(
+                    {
+                        "holes_start": [tuple(unwrapped._prob.entrance_coords[0])],
+                        "holes_end": [tuple(unwrapped._prob.exit_coords[0])],
+                    }
+                )
 
-        if hasattr(unwrapped._rep, 'static_prob'):
-            episode.hist_data.update({
-                'static_prob': [unwrapped._rep.static_prob],
-            })
-        
-        if hasattr(unwrapped._rep, 'n_static_walls'):
-            episode.hist_data.update({
-                'n_static_walls': [unwrapped._rep.n_static_walls],
-            })
+        if hasattr(unwrapped._rep, "static_prob"):
+            episode.hist_data.update(
+                {
+                    "static_prob": [unwrapped._rep.static_prob],
+                }
+            )
+
+        if hasattr(unwrapped._rep, "n_static_walls"):
+            episode.hist_data.update(
+                {
+                    "n_static_walls": [unwrapped._rep.n_static_walls],
+                }
+            )

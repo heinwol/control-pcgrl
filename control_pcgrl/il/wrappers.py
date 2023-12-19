@@ -8,6 +8,7 @@ from control_pcgrl.envs.reps.wrappers import RepresentationWrapper
 
 class PoDWrapper(gym.Wrapper):
     """Wrapper for generating random paths of destruction."""
+
     def __init__(self, env, cfg: PoDConfig):
         self.env = env
         self.env.adjust_param(cfg=cfg)
@@ -31,7 +32,7 @@ class PoDWrapper(gym.Wrapper):
 
     #     repair_action = self.get_repair_action()
 
-    #     return destroy_action, repair_action 
+    #     return destroy_action, repair_action
 
     # def get_repair_action(self):
 
@@ -39,7 +40,7 @@ class PoDWrapper(gym.Wrapper):
     #     curr_tile_int = self.rep.unwrapped._map[tuple(self.rep.unwrapped._pos)]
 
     #     # Account no-op in narrow representation.
-    #     # curr_tile_narrow_build_action = curr_tile_int + 1 
+    #     # curr_tile_narrow_build_action = curr_tile_int + 1
 
     #     repair_action = curr_tile_int
 
@@ -66,7 +67,7 @@ def obfuscate_observation(obs):
     obs = np.eye(obs.shape[-1])[obs_int]
     return obs
 
-    
+
 # class PoDRepresentationWrapper(RepresentationWrapper):
 #     # FIXME: Move to (narrow) representation.
 #     def __init__(self, rep, cfg):

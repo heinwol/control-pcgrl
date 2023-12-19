@@ -2,22 +2,39 @@ from PIL import Image
 import os
 import numpy as np
 from control_pcgrl.envs.probs.problem import Problem
-from control_pcgrl.envs.helper import get_range_reward, get_tile_locations, calc_certain_tile, calc_num_regions, get_floor_dist
-from control_pcgrl.envs.probs.ddave.ddave.engine import State,BFSAgent,AStarAgent
+from control_pcgrl.envs.helper import (
+    get_range_reward,
+    get_tile_locations,
+    calc_certain_tile,
+    calc_num_regions,
+    get_floor_dist,
+)
+from control_pcgrl.envs.probs.ddave.ddave.engine import State, BFSAgent, AStarAgent
 
 """
 Generate a fully connected level for a simple platformer similar to Dangerous Dave (http://www.dangerousdave.com)
 where the player has to jump at least 2 times to finish
 """
+
+
 class DDaveProblem(Problem):
     """
     The constructor is responsible of initializing all the game parameters
     """
+
     def __init__(self):
         super().__init__()
         self._width = 11
         self._height = 7
-        self._prob = {"empty":0.5, "solid":0.3, "player":0.02, "exit":0.02, "diamond":0.04, "key": 0.02, "spike":0.1}
+        self._prob = {
+            "empty": 0.5,
+            "solid": 0.3,
+            "player": 0.02,
+            "exit": 0.02,
+            "diamond": 0.04,
+            "key": 0.02,
+            "spike": 0.1,
+        }
         self._border_tile = "solid"
 
         self._solver_power = 5000
@@ -38,7 +55,7 @@ class DDaveProblem(Problem):
             "regions": 5,
             "num-jumps": 3,
             "dist-win": 0.1,
-            "sol-length": 1
+            "sol-length": 1,
         }
 
     """
@@ -47,6 +64,7 @@ class DDaveProblem(Problem):
     Returns:
         string[]: that contains all the tile names
     """
+
     def get_tile_types(self):
         return ["empty", "solid", "player", "exit", "diamond", "key", "spike"]
 
@@ -64,18 +82,19 @@ class DDaveProblem(Problem):
         target_solution (int): the number of moves needed to consider the game a success
         rewards (dict(string,float)): the weights of each reward change between the new_stats and old_stats
     """
+
     def adjust_param(self, **kwargs):
         super().adjust_param(**kwargs)
 
-        self._solver_power = kwargs.get('solver_power', self._solver_power)
+        self._solver_power = kwargs.get("solver_power", self._solver_power)
 
-        self._max_diamonds = kwargs.get('max_diamonds', self._max_diamonds)
-        self._min_spikes = kwargs.get('min_spikes', self._min_spikes)
+        self._max_diamonds = kwargs.get("max_diamonds", self._max_diamonds)
+        self._min_spikes = kwargs.get("min_spikes", self._min_spikes)
 
-        self._target_jumps = kwargs.get('target_jumps', self._target_jumps)
-        self._target_solution = kwargs.get('target_solution', self._target_solution)
+        self._target_jumps = kwargs.get("target_jumps", self._target_jumps)
+        self._target_solution = kwargs.get("target_solution", self._target_solution)
 
-        rewards = kwargs.get('rewards')
+        rewards = kwargs.get("rewards")
         if rewards is not None:
             for t in rewards:
                 if t in self._reward_weights:
@@ -94,11 +113,14 @@ class DDaveProblem(Problem):
         "airTime": how long before the player start falling, "num_jumps": the number of jumps used till now,
         "col_diamonds": the number of collected diamonds so far, "col_key": the number of collected keys
     """
+
     def _run_game(self, map):
-        gameCharacters=" #@H$V*"
-        string_to_char = dict((s, gameCharacters[i]) for i, s in enumerate(self.get_tile_types()))
+        gameCharacters = " #@H$V*"
+        string_to_char = dict(
+            (s, gameCharacters[i]) for i, s in enumerate(self.get_tile_types())
+        )
         lvlString = ""
-        for x in range(self._width+2):
+        for x in range(self._width + 2):
             lvlString += "#"
         lvlString += "\n"
         for i in range(len(map)):
@@ -107,9 +129,9 @@ class DDaveProblem(Problem):
                 if j == 0:
                     lvlString += "#"
                 lvlString += string_to_char[string]
-                if j == self._width-1:
+                if j == self._width - 1:
                     lvlString += "#\n"
-        for x in range(self._width+2):
+        for x in range(self._width + 2):
             lvlString += "#"
         lvlString += "\n"
 
@@ -119,21 +141,20 @@ class DDaveProblem(Problem):
         aStarAgent = AStarAgent()
         bfsAgent = BFSAgent()
 
-        sol,solState,iters = aStarAgent.getSolution(state, 1, self._solver_power)
+        sol, solState, iters = aStarAgent.getSolution(state, 1, self._solver_power)
         if solState.checkWin():
             return 0, len(sol), solState.getGameStatus()
-        sol,solState,iters = aStarAgent.getSolution(state, 0.5, self._solver_power)
+        sol, solState, iters = aStarAgent.getSolution(state, 0.5, self._solver_power)
         if solState.checkWin():
             return 0, len(sol), solState.getGameStatus()
-        sol,solState,iters = aStarAgent.getSolution(state, 0, self._solver_power)
+        sol, solState, iters = aStarAgent.getSolution(state, 0, self._solver_power)
         if solState.checkWin():
             return 0, len(sol), solState.getGameStatus()
-        sol,solState,iters = bfsAgent.getSolution(state, self._solver_power)
+        sol, solState, iters = bfsAgent.getSolution(state, self._solver_power)
         if solState.checkWin():
             return 0, len(sol), solState.getGameStatus()
 
         return solState.getHeuristic(), 0, solState.getGameStatus()
-
 
     """
     Get the current stats of the map
@@ -146,6 +167,7 @@ class DDaveProblem(Problem):
         "col-diamonds": number of collected diamonds by a planning agent, "dist-win": how close to the win state,
         "sol-length": length of the solution to win the level
     """
+
     def get_stats(self, map):
         map_locations = get_tile_locations(map, self.get_tile_types())
         map_stats = {
@@ -155,15 +177,25 @@ class DDaveProblem(Problem):
             "diamonds": calc_certain_tile(map_locations, ["diamond"]),
             "key": calc_certain_tile(map_locations, ["key"]),
             "spikes": calc_certain_tile(map_locations, ["spike"]),
-            "regions": calc_num_regions(map, map_locations, ["empty","player","diamond","key","exit"]),
+            "regions": calc_num_regions(
+                map, map_locations, ["empty", "player", "diamond", "key", "exit"]
+            ),
             "num-jumps": 0,
             "col-diamonds": 0,
             "dist-win": self._width * self._height,
-            "sol-length": 0
+            "sol-length": 0,
         }
         if map_stats["player"] == 1:
-            if map_stats["exit"] == 1 and map_stats["key"] == 1 and map_stats["regions"] == 1:
-                map_stats["dist-win"], map_stats["sol-length"], play_stats = self._run_game(map)
+            if (
+                map_stats["exit"] == 1
+                and map_stats["key"] == 1
+                and map_stats["regions"] == 1
+            ):
+                (
+                    map_stats["dist-win"],
+                    map_stats["sol-length"],
+                    play_stats,
+                ) = self._run_game(map)
                 map_stats["num-jumps"] = play_stats["num_jumps"]
                 map_stats["col-diamonds"] = play_stats["col_diamonds"]
         return map_stats
@@ -178,31 +210,51 @@ class DDaveProblem(Problem):
     Returns:
         float: the current reward due to the change between the old map stats and the new map stats
     """
+
     def get_reward(self, new_stats, old_stats):
-        #longer path is rewarded and less number of regions is rewarded
+        # longer path is rewarded and less number of regions is rewarded
         rewards = {
             "player": get_range_reward(new_stats["player"], old_stats["player"], 1, 1),
             "exit": get_range_reward(new_stats["exit"], old_stats["exit"], 1, 1),
-            "diamonds": get_range_reward(new_stats["diamonds"], old_stats["diamonds"], -np.inf, self._max_diamonds),
-            "dist-floor": get_range_reward(new_stats["dist-floor"], old_stats["dist-floor"], 0, 0),
+            "diamonds": get_range_reward(
+                new_stats["diamonds"],
+                old_stats["diamonds"],
+                -np.inf,
+                self._max_diamonds,
+            ),
+            "dist-floor": get_range_reward(
+                new_stats["dist-floor"], old_stats["dist-floor"], 0, 0
+            ),
             "key": get_range_reward(new_stats["key"], old_stats["key"], 1, 1),
-            "spikes": get_range_reward(new_stats["spikes"], old_stats["spikes"], self._min_spikes, np.inf),
-            "regions": get_range_reward(new_stats["regions"], old_stats["regions"], 1, 1),
-            "num-jumps": get_range_reward(new_stats["num-jumps"], old_stats["num-jumps"], np.inf, np.inf),
-            "dist-win": get_range_reward(new_stats["dist-win"], old_stats["dist-win"], -np.inf, -np.inf),
-            "sol-length": get_range_reward(new_stats["sol-length"], old_stats["sol-length"], np.inf, np.inf)
+            "spikes": get_range_reward(
+                new_stats["spikes"], old_stats["spikes"], self._min_spikes, np.inf
+            ),
+            "regions": get_range_reward(
+                new_stats["regions"], old_stats["regions"], 1, 1
+            ),
+            "num-jumps": get_range_reward(
+                new_stats["num-jumps"], old_stats["num-jumps"], np.inf, np.inf
+            ),
+            "dist-win": get_range_reward(
+                new_stats["dist-win"], old_stats["dist-win"], -np.inf, -np.inf
+            ),
+            "sol-length": get_range_reward(
+                new_stats["sol-length"], old_stats["sol-length"], np.inf, np.inf
+            ),
         }
-        #calculate the total reward
-        return rewards["player"] * self._reward_weights["player"] +\
-            rewards["dist-floor"] * self._reward_weights["dist-floor"] +\
-            rewards["exit"] * self._reward_weights["exit"] +\
-            rewards["spikes"] * self._reward_weights["spikes"] +\
-            rewards["diamonds"] * self._reward_weights["diamonds"] +\
-            rewards["key"] * self._reward_weights["key"] +\
-            rewards["regions"] * self._reward_weights["regions"] +\
-            rewards["num-jumps"] * self._reward_weights["num-jumps"] +\
-            rewards["dist-win"] * self._reward_weights["dist-win"] +\
-            rewards["sol-length"] * self._reward_weights["sol-length"]
+        # calculate the total reward
+        return (
+            rewards["player"] * self._reward_weights["player"]
+            + rewards["dist-floor"] * self._reward_weights["dist-floor"]
+            + rewards["exit"] * self._reward_weights["exit"]
+            + rewards["spikes"] * self._reward_weights["spikes"]
+            + rewards["diamonds"] * self._reward_weights["diamonds"]
+            + rewards["key"] * self._reward_weights["key"]
+            + rewards["regions"] * self._reward_weights["regions"]
+            + rewards["num-jumps"] * self._reward_weights["num-jumps"]
+            + rewards["dist-win"] * self._reward_weights["dist-win"]
+            + rewards["sol-length"] * self._reward_weights["sol-length"]
+        )
 
     """
     Uses the stats to check if the problem ended (episode_over) which means reached
@@ -215,9 +267,12 @@ class DDaveProblem(Problem):
     Returns:
         boolean: True if the level reached satisfying quality based on the stats and False otherwise
     """
+
     def get_episode_over(self, new_stats, old_stats):
-        return new_stats["sol-length"] >= self._target_solution and\
-                new_stats["num-jumps"] > self._target_jumps
+        return (
+            new_stats["sol-length"] >= self._target_solution
+            and new_stats["num-jumps"] > self._target_jumps
+        )
 
     """
     Get any debug information need to be printed
@@ -230,6 +285,7 @@ class DDaveProblem(Problem):
         dict(any,any): is a debug information that can be used to debug what is
         happening in the problem
     """
+
     def get_debug_info(self, new_stats, old_stats):
         return {
             "player": new_stats["player"],
@@ -241,7 +297,7 @@ class DDaveProblem(Problem):
             "col-diamonds": new_stats["col-diamonds"],
             "num-jumps": new_stats["num-jumps"],
             "dist-win": new_stats["dist-win"],
-            "sol-length": new_stats["sol-length"]
+            "sol-length": new_stats["sol-length"],
         }
 
     """
@@ -253,15 +309,30 @@ class DDaveProblem(Problem):
     Returns:
         Image: a pillow image on how the map will look like using ddave graphics
     """
+
     def render(self, map):
         if self._graphics == None:
             self._graphics = {
-                "empty": Image.open(os.path.dirname(__file__) + "/ddave/empty.png").convert('RGBA'),
-                "solid": Image.open(os.path.dirname(__file__) + "/ddave/solid.png").convert('RGBA'),
-                "player": Image.open(os.path.dirname(__file__) + "/ddave/player.png").convert('RGBA'),
-                "exit": Image.open(os.path.dirname(__file__) + "/ddave/exit.png").convert('RGBA'),
-                "diamond": Image.open(os.path.dirname(__file__) + "/ddave/diamond.png").convert('RGBA'),
-                "key": Image.open(os.path.dirname(__file__) + "/ddave/key.png").convert('RGBA'),
-                "spike": Image.open(os.path.dirname(__file__) + "/ddave/spike.png").convert('RGBA')
+                "empty": Image.open(
+                    os.path.dirname(__file__) + "/ddave/empty.png"
+                ).convert("RGBA"),
+                "solid": Image.open(
+                    os.path.dirname(__file__) + "/ddave/solid.png"
+                ).convert("RGBA"),
+                "player": Image.open(
+                    os.path.dirname(__file__) + "/ddave/player.png"
+                ).convert("RGBA"),
+                "exit": Image.open(
+                    os.path.dirname(__file__) + "/ddave/exit.png"
+                ).convert("RGBA"),
+                "diamond": Image.open(
+                    os.path.dirname(__file__) + "/ddave/diamond.png"
+                ).convert("RGBA"),
+                "key": Image.open(os.path.dirname(__file__) + "/ddave/key.png").convert(
+                    "RGBA"
+                ),
+                "spike": Image.open(
+                    os.path.dirname(__file__) + "/ddave/spike.png"
+                ).convert("RGBA"),
             }
         return super().render(map)

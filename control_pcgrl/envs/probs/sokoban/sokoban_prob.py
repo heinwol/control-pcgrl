@@ -11,8 +11,13 @@ from control_pcgrl.envs.helper import (
     get_tile_locations,
 )
 from control_pcgrl.envs.probs.problem import Problem
-from control_pcgrl.envs.helper import get_range_reward, get_tile_locations, calc_certain_tile, calc_num_regions
-from control_pcgrl.envs.probs.sokoban.sokoban.engine import State,BFSAgent,AStarAgent
+from control_pcgrl.envs.helper import (
+    get_range_reward,
+    get_tile_locations,
+    calc_certain_tile,
+    calc_num_regions,
+)
+from control_pcgrl.envs.probs.sokoban.sokoban.engine import State, BFSAgent, AStarAgent
 
 """
 Generate a fully connected Sokoban(https://en.wikipedia.org/wiki/Sokoban) level that can be solved
@@ -23,6 +28,7 @@ class SokobanProblem(Problem):
     """
     The constructor is responsible of initializing all the game parameters
     """
+
     _tile_types = ["empty", "solid", "player", "crate", "target"]
 
     def __init__(self, cfg: Config):
@@ -53,7 +59,6 @@ class SokobanProblem(Problem):
             "dist-win": 0.0,
             "sol-length": 1,
         }
-
 
     """
     Adjust the parameters for the current problem
@@ -262,9 +267,8 @@ class SokobanProblem(Problem):
             "target": new_stats["target"],
             "regions": new_stats["regions"],
             "dist-win": new_stats["dist-win"],
-            "sol-length": len(new_stats.get('solution', []))
+            "sol-length": len(new_stats.get("solution", [])),
         }
-
 
     def init_graphics(self):
         if self.GVGAI_SPRITES:
@@ -287,13 +291,22 @@ class SokobanProblem(Problem):
             }
         else:
             self._graphics = {
-                "empty": Image.open(os.path.dirname(__file__) + "/sokoban/empty.png").convert('RGBA'),
-                "solid": Image.open(os.path.dirname(__file__) + "/sokoban/solid.png").convert('RGBA'),
-                "player": Image.open(os.path.dirname(__file__) + "/sokoban/player.png").convert('RGBA'),
-                "crate": Image.open(os.path.dirname(__file__) + "/sokoban/crate.png").convert('RGBA'),
-                "target": Image.open(os.path.dirname(__file__) + "/sokoban/target.png").convert('RGBA')
+                "empty": Image.open(
+                    os.path.dirname(__file__) + "/sokoban/empty.png"
+                ).convert("RGBA"),
+                "solid": Image.open(
+                    os.path.dirname(__file__) + "/sokoban/solid.png"
+                ).convert("RGBA"),
+                "player": Image.open(
+                    os.path.dirname(__file__) + "/sokoban/player.png"
+                ).convert("RGBA"),
+                "crate": Image.open(
+                    os.path.dirname(__file__) + "/sokoban/crate.png"
+                ).convert("RGBA"),
+                "target": Image.open(
+                    os.path.dirname(__file__) + "/sokoban/target.png"
+                ).convert("RGBA"),
             }
-
 
     def render(self, map):
         """
@@ -306,5 +319,5 @@ class SokobanProblem(Problem):
             Image: a pillow image on how the map will look like using sokoban graphics
         """
         if self._graphics is None:
-           self.init_graphics() 
+            self.init_graphics()
         return super().render(map)

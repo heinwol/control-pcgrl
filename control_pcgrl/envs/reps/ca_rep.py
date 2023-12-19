@@ -8,6 +8,8 @@ import numpy as np
 """
 The cellular (autamaton-like) representation, where the agent may change all tiles on the map at each step.
 """
+
+
 class CARepresentation(Representation):
 
     """
@@ -22,6 +24,7 @@ class CARepresentation(Representation):
         Box: the action space is the same as the observation space, and consists of selected tile-types for
         each tile-coordinate in the level.
     """
+
     def get_action_space(self, dims, num_tiles):
         return self.get_observation_space(dims, dims, num_tiles)
 
@@ -34,6 +37,7 @@ class CARepresentation(Representation):
     Returns:
         boolean: True if the action change the map, False if nothing changed
     """
+
     def update(self, action: np.ndarray, continuous=False):
         next_map = action.argmax(axis=0) if not continuous else action
         if self._map is None:

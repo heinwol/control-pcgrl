@@ -28,12 +28,17 @@ def set_map_fn(
     if not task_settable_env.evaluation_env:
         return None
     if task_settable_env.unwrapped._has_been_assigned_map:
-        map_idx = task_settable_env.cur_map_idx + env_ctx['num_eval_envs']
+        map_idx = task_settable_env.cur_map_idx + env_ctx["num_eval_envs"]
     else:
         # This will assign each eval env a unique map_idx from 0 to n_eval_envs - 1
-        map_idx = task_settable_env.cur_map_idx + env_ctx.worker_index * env_ctx['num_envs_per_worker'] + \
-            env_ctx.vector_index
+        map_idx = (
+            task_settable_env.cur_map_idx
+            + env_ctx.worker_index * env_ctx["num_envs_per_worker"]
+            + env_ctx.vector_index
+        )
         task_settable_env.unwrapped._has_been_assigned_map = True
     map_idx = map_idx % len(task_settable_env.unwrapped._prob.eval_maps)
-    print(f"Assigning map {map_idx} to environment {env_ctx.vector_index} of worker {env_ctx.worker_index}.")
+    print(
+        f"Assigning map {map_idx} to environment {env_ctx.vector_index} of worker {env_ctx.worker_index}."
+    )
     return map_idx

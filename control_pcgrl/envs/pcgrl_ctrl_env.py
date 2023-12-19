@@ -2,6 +2,7 @@ import numpy as np
 from control_pcgrl.configs.config import Config
 from control_pcgrl.envs.pcgrl_env import PcgrlEnv
 
+
 class PcgrlCtrlEnv(PcgrlEnv):
     # TODO: Remove prob and rep since already contained in config
     def __init__(self, cfg: Config, prob="binary_ctrl", rep="narrow"):

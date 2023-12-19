@@ -8,13 +8,14 @@ from pdb import set_trace as TT
 from timeit import default_timer as timer
 from typing import Dict, OrderedDict
 
-# import gi 
+# import gi
 # gi.require_version("Gtk", "3.0")
 # from gi.repository import Gtk
 import gymnasium as gym
 import numpy as np
 
 from control_pcgrl.configs.config import Config
+
 # from opensimplex import OpenSimplex
 from control_pcgrl.envs.helper import get_range_reward
 import ray
@@ -25,7 +26,6 @@ import ray
 # In particular we're only looking at integers and we're excluding the upper bound of the range.
 class ControlWrapper(gym.Wrapper):
     def __init__(self, env, cfg: Config, ctrl_metrics=None, rand_params=False):
-
         # Is this a controllable agent? If false, we're just using this wrapper for convenience, to calculate relative
         # reward and establish baseline performance
         self.controllable = ctrl_metrics is not None
@@ -63,7 +63,7 @@ class ControlWrapper(gym.Wrapper):
         self.param_ranges = {}
 
         # controllable metrics
-        self.ctrl_metrics = ctrl_metrics if ctrl_metrics is not None else [] 
+        self.ctrl_metrics = ctrl_metrics if ctrl_metrics is not None else []
         self.n_ctrl_metrics = len(self.ctrl_metrics)
 
         for k in self.ctrl_metrics:
@@ -117,9 +117,8 @@ class ControlWrapper(gym.Wrapper):
         self.ctrl_loss_metrics = ctrl_loss_metrics
         self.max_loss = self.get_max_loss(ctrl_metrics=ctrl_loss_metrics)
 
-        if self.render_mode == 'gtk':
+        if self.render_mode == "gtk":
             self.win = self._init_gui()
-
 
     def _init_gui(self):
         screen_width = 200
@@ -131,8 +130,14 @@ class ControlWrapper(gym.Wrapper):
         elif self.unwrapped._prob._graphics is None:
             self.unwrapped._prob.init_graphics()
             _graphics = self.unwrapped._prob._graphics
-        win = GtkGUI(env=self, tile_types=self.unwrapped._prob.get_tile_types(), tile_images=_graphics, 
-            metrics=self.metrics, metric_trgs=self.metric_trgs, metric_bounds=self.cond_bounds)
+        win = GtkGUI(
+            env=self,
+            tile_types=self.unwrapped._prob.get_tile_types(),
+            tile_images=_graphics,
+            metrics=self.metrics,
+            metric_trgs=self.metric_trgs,
+            metric_bounds=self.cond_bounds,
+        )
         # win.connect("destroy", Gtk.main_quit)
         win.show_all()
         win = win
@@ -204,8 +209,8 @@ class ControlWrapper(gym.Wrapper):
                 trg = (trg[0] + trg[1]) / 2
 
             # Add channel layers filled with scalar values corresponding to the target values of metrics of interest.
-            metrics_ob[:, :, i*2] = trg / self.param_ranges[k]
-            metrics_ob[:, :, i*2+1] = metric / self.param_ranges[k]
+            metrics_ob[:, :, i * 2] = trg / self.param_ranges[k]
+            metrics_ob[:, :, i * 2 + 1] = metric / self.param_ranges[k]
             i += 1
 
         obs = np.concatenate((metrics_ob, obs), axis=-1)
@@ -217,8 +222,8 @@ class ControlWrapper(gym.Wrapper):
         ob, rew, done, truncated, info = super().step(action, **kwargs)
         self.metrics = self.unwrapped._rep_stats
 
-        # Add target values of metrics of interest to the agent's obervation, so that it can learn to reproduce them 
-        # while editing the level. 
+        # Add target values of metrics of interest to the agent's obervation, so that it can learn to reproduce them
+        # while editing the level.
         if self.controllable:
             ob = self.observe_metric_trgs(ob)
 
@@ -237,31 +242,52 @@ class ControlWrapper(gym.Wrapper):
             done = False
             truncated = False
 
-        if self.render_mode in {'human', 'gtk', 'save_gif'}:
+        if self.render_mode in {"human", "gtk", "save_gif"}:
             self.render()
 
         # print("step: ", self.n_step, " done: ", done, " reward: ", reward, " action: ", action, " metrics: ", self.metrics)
         return ob, reward, done, truncated, info
 
     def render(self, **kwargs):
-        if self.render_mode == 'gtk':
+        if self.render_mode == "gtk":
             img = super().render()
             self.win.render(img)
             user_clicks = self.win.get_clicks()
-            for (py, px, tile, static) in user_clicks:
-
+            for py, px, tile, static in user_clicks:
                 # FIXME: this logic belongs inside gtk_gui...?
                 # First subtract the pygtk EventBox border size
                 # Size of rendered map in pixels
-                map_size_pix = self.unwrapped._prob._tile_size * (np.array(self.unwrapped._rep.unwrapped._map.shape) + np.array(self.unwrapped._prob._border_size) * 2)
+                map_size_pix = self.unwrapped._prob._tile_size * (
+                    np.array(self.unwrapped._rep.unwrapped._map.shape)
+                    + np.array(self.unwrapped._prob._border_size) * 2
+                )
 
                 # Assume map is always rendered in the middle of its eventbox
-                widget_border_size = (np.array([self.win.map_eventbox.get_allocated_width(), self.win.map_eventbox.get_allocated_height()]) - map_size_pix) / 2
+                widget_border_size = (
+                    np.array(
+                        [
+                            self.win.map_eventbox.get_allocated_width(),
+                            self.win.map_eventbox.get_allocated_height(),
+                        ]
+                    )
+                    - map_size_pix
+                ) / 2
                 px, py = px - widget_border_size[1], py - widget_border_size[0]
 
-                x = int(px // self.unwrapped._prob._tile_size - self.unwrapped._prob._border_size[1])
-                y = int(py // self.unwrapped._prob._tile_size - self.unwrapped._prob._border_size[0])
-                if x < 0 or y < 0 or x >= self.unwrapped._rep.unwrapped._map.shape[0] or y >= self.unwrapped._rep.unwrapped._map.shape[1]:
+                x = int(
+                    px // self.unwrapped._prob._tile_size
+                    - self.unwrapped._prob._border_size[1]
+                )
+                y = int(
+                    py // self.unwrapped._prob._tile_size
+                    - self.unwrapped._prob._border_size[0]
+                )
+                if (
+                    x < 0
+                    or y < 0
+                    or x >= self.unwrapped._rep.unwrapped._map.shape[0]
+                    or y >= self.unwrapped._rep.unwrapped._map.shape[1]
+                ):
                     print("Clicked outside of map")
                     continue
 
@@ -271,16 +297,16 @@ class ControlWrapper(gym.Wrapper):
                 # FIXME: This is a hack. Write a function in Representation for this.
                 self.unwrapped._rep.unwrapped._map[x, y] = tile_int
 
-                if hasattr(self.unwrapped._rep, 'static_builds'):
+                if hasattr(self.unwrapped._rep, "static_builds"):
                     # Assuming borders of width 1 (different than `_border_size` above, which may be different for rendering purposes).
-                    self.unwrapped._rep.static_builds[x+1, y+1] = int(static)
+                    self.unwrapped._rep.static_builds[x + 1, y + 1] = int(static)
 
             self.unwrapped._rep.unwrapped._update_bordered_map()
 
             if self.win._paused:
                 self.render()
 
-        elif self.render_mode == 'save_gif':
+        elif self.render_mode == "save_gif":
             img = super().render()
             return img
 
@@ -292,15 +318,23 @@ class ControlWrapper(gym.Wrapper):
                 for _ in range(N):
                     super().reset()
                     super().render()
-                print(f'mean pyglet image render time over {N} trials:', (timer() - start_time) * 1000 / N, 'ms')
+                print(
+                    f"mean pyglet image render time over {N} trials:",
+                    (timer() - start_time) * 1000 / N,
+                    "ms",
+                )
 
                 start_time = timer()
                 for _ in range(N):
                     img = super().render()
                     self.win.render(img)
-                print(f'mean pygobject image render time over {N} trials:', (timer() - start_time) * 1000 / N, 'ms')
+                print(
+                    f"mean pygobject image render time over {N} trials:",
+                    (timer() - start_time) * 1000 / N,
+                    "ms",
+                )
             ### END PROFILING ###
- 
+
             return super().render()
 
     def get_cond_trgs(self):
@@ -312,7 +346,7 @@ class ControlWrapper(gym.Wrapper):
     def display_metric_trgs(self):
         if self.render_gui:
             # if self.win is None:
-                # self._init_gui()
+            # self._init_gui()
             self.win.display_metric_trgs()
 
     def get_loss(self):
@@ -345,19 +379,31 @@ class ControlWrapper(gym.Wrapper):
         return loss
 
     def get_max_loss(self, ctrl_metrics=[]):
-        '''Upper bound on distance of level from static targets.
-        
+        """Upper bound on distance of level from static targets.
+
         Args:
             ctrl_metrics (list): list of metrics to be controlled (in RL), or used as diversity measured (in QD). These
                 will not factor into the loss.
-        '''
+        """
         net_max_loss = 0
         for k, v in self.static_trgs.items():
             if k in ctrl_metrics:
                 continue
             if isinstance(v, tuple):
-                max_loss = max(abs(v[0] - self.cond_bounds[k][0]), abs(v[1] - self.cond_bounds[k][1])) * self.metric_weights[k]
-            else: max_loss = max(abs(v - self.cond_bounds[k][0]), abs(v - self.cond_bounds[k][1])) * self.metric_weights[k]
+                max_loss = (
+                    max(
+                        abs(v[0] - self.cond_bounds[k][0]),
+                        abs(v[1] - self.cond_bounds[k][1]),
+                    )
+                    * self.metric_weights[k]
+                )
+            else:
+                max_loss = (
+                    max(
+                        abs(v - self.cond_bounds[k][0]), abs(v - self.cond_bounds[k][1])
+                    )
+                    * self.metric_weights[k]
+                )
             net_max_loss += max_loss
         return net_max_loss
 

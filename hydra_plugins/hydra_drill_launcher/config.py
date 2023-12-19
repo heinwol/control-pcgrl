@@ -77,15 +77,13 @@ class SlurmQueueConf(BaseQueueConf):
 
 @dataclass
 class DrillBaseQueueConf(BaseQueueConf):
-    _target_: str = (
-        "hydra_plugins.hydra_drill_launcher.drill_launcher.BasicLauncher"
-    )
+    _target_: str = "hydra_plugins.hydra_drill_launcher.drill_launcher.BasicLauncher"
+
 
 @dataclass
 class LocalQueueConf(BaseQueueConf):
-    _target_: str = (
-        "hydra_plugins.hydra_drill_launcher.drill_launcher.LocalLauncher"
-    )
+    _target_: str = "hydra_plugins.hydra_drill_launcher.drill_launcher.LocalLauncher"
+
 
 @dataclass
 class CrossEvalQueueConf(BaseQueueConf):

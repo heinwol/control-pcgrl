@@ -1,8 +1,11 @@
 from queue import PriorityQueue
 
-directions = [{"x":0, "y":0}, {"x":1, "y":0}, {"x":0, "y":-1}, {"x":1, "y":-1}]
+directions = [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 0, "y": -1}, {"x": 1, "y": -1}]
+
+
 class Node:
     balance = 0.5
+
     def __init__(self, state, parent, action):
         self.state = state
         self.parent = parent
@@ -43,20 +46,31 @@ class Node:
     def getActions(self):
         actions = []
         current = self
-        while(current.parent != None):
-            actions.insert(0,current.action)
+        while current.parent != None:
+            actions.insert(0, current.action)
             current = current.parent
         return actions
 
     def __str__(self):
-        return str(self.depth) + "," + str(self.state.getHeuristic()) + "\n" + str(self.state)
+        return (
+            str(self.depth)
+            + ","
+            + str(self.state.getHeuristic())
+            + "\n"
+            + str(self.state)
+        )
 
     def __lt__(self, other):
-        return self.getHeuristic()+Node.balance*self.getCost() < other.getHeuristic()+Node.balance*other.getCost()
+        return (
+            self.getHeuristic() + Node.balance * self.getCost()
+            < other.getHeuristic() + Node.balance * other.getCost()
+        )
+
 
 class Agent:
     def getSolution(self, state, maxIterations):
         return []
+
 
 class BFSAgent(Agent):
     def getSolution(self, state, maxIterations=-1):
@@ -74,11 +88,15 @@ class BFSAgent(Agent):
             if current.getKey() not in visisted:
                 if bestNode == None or current.getHeuristic() < bestNode.getHeuristic():
                     bestNode = current
-                elif current.getHeuristic() == bestNode.getHeuristic() and current.getCost() < bestNode.getCost():
+                elif (
+                    current.getHeuristic() == bestNode.getHeuristic()
+                    and current.getCost() < bestNode.getCost()
+                ):
                     bestNode = current
                 visisted.add(current.getKey())
                 queue.extend(current.getChildren())
         return bestNode.getActions(), bestNode, iterations
+
 
 class DFSAgent(Agent):
     def getSolution(self, state, maxIterations=-1):
@@ -96,11 +114,15 @@ class DFSAgent(Agent):
             if current.getKey() not in visisted:
                 if bestNode == None or current.getHeuristic() < bestNode.getHeuristic():
                     bestNode = current
-                elif current.getHeuristic() == bestNode.getHeuristic() and current.getCost() < bestNode.getCost():
+                elif (
+                    current.getHeuristic() == bestNode.getHeuristic()
+                    and current.getCost() < bestNode.getCost()
+                ):
                     bestNode = current
                 visisted.add(current.getKey())
                 queue.extend(current.getChildren())
         return bestNode.getActions(), bestNode, iterations
+
 
 class AStarAgent(Agent):
     def getSolution(self, state, balance=1, maxIterations=-1):
@@ -120,13 +142,17 @@ class AStarAgent(Agent):
             if current.getKey() not in visisted:
                 if bestNode == None or current.getHeuristic() < bestNode.getHeuristic():
                     bestNode = current
-                elif current.getHeuristic() == bestNode.getHeuristic() and current.getCost() < bestNode.getCost():
+                elif (
+                    current.getHeuristic() == bestNode.getHeuristic()
+                    and current.getCost() < bestNode.getCost()
+                ):
                     bestNode = current
                 visisted.add(current.getKey())
                 children = current.getChildren()
                 for c in children:
                     queue.put(c)
         return bestNode.getActions(), bestNode, iterations
+
 
 class State:
     def __init__(self):
@@ -137,43 +163,49 @@ class State:
     def stringInitialize(self, lines):
         # clean the input
         for i in range(len(lines)):
-            lines[i]=lines[i].replace("\n","")
+            lines[i] = lines[i].replace("\n", "")
 
         for i in range(len(lines)):
             if len(lines[i].strip()) != 0:
                 break
             else:
                 del lines[i]
-                i-=1
-        for i in range(len(lines)-1,0,-1):
+                i -= 1
+        for i in range(len(lines) - 1, 0, -1):
             if len(lines[i].strip()) != 0:
                 break
             else:
                 del lines[i]
-                i+=1
+                i += 1
 
-        #get size of the map
-        self.width=0
-        self.height=len(lines)
+        # get size of the map
+        self.width = 0
+        self.height = len(lines)
         for l in lines:
             if len(l) > self.width:
                 self.width = len(l)
 
-        #set the level
+        # set the level
         for y in range(self.height):
             l = lines[y]
             self.solid.append([])
             for x in range(self.width):
-                if x > len(l)-1:
+                if x > len(l) - 1:
                     self.solid[y].append(False)
                     continue
-                c=l[x]
+                c = l[x]
                 if c == "#":
                     self.solid[y].append(True)
                 else:
                     self.solid[y].append(False)
                     if c == "@":
-                        self.player = {"x": x, "y": y, "airTime": 0, "jumps": 0, "jump_locs": []}
+                        self.player = {
+                            "x": x,
+                            "y": y,
+                            "airTime": 0,
+                            "jumps": 0,
+                            "jump_locs": [],
+                        }
                     if c == "|":
                         self.exit = x
 
@@ -183,8 +215,13 @@ class State:
         clone.height = self.height
         clone.solid = self.solid
         clone.exit = self.exit
-        clone.player = {"x":self.player["x"], "y":self.player["y"], "airTime":self.player["airTime"],
-            "jumps":self.player["jumps"], "jump_locs": []}
+        clone.player = {
+            "x": self.player["x"],
+            "y": self.player["y"],
+            "airTime": self.player["airTime"],
+            "jumps": self.player["jumps"],
+            "jump_locs": [],
+        }
         for l in self.player["jump_locs"]:
             clone.player["jump_locs"].append(l)
         return clone
@@ -198,13 +235,13 @@ class State:
         if self.checkOver():
             return
         if dirX > 0:
-            dirX=1
+            dirX = 1
         if dirX < 0:
-            dirX=-1
+            dirX = -1
         if dirY < 0:
-            dirY=-1
+            dirY = -1
         else:
-            dirY=0
+            dirY = 0
         ground = False
         if self.player["y"] < len(self.solid) - 1 and self.player["y"] >= -1:
             ground = self.solid[self.player["y"] + 1][self.player["x"]]
@@ -214,7 +251,7 @@ class State:
             if self.checkMovableLocation(newX + dirX, newY):
                 newX = newX + dirX
         if dirY == -1:
-            if ground and self.checkMovableLocation(newX, newY-1):
+            if ground and self.checkMovableLocation(newX, newY - 1):
                 self.player["airTime"] = 5
                 self.player["jumps"] += 1
                 self.player["jump_locs"].append((self.player["x"], self.player["y"]))
@@ -237,7 +274,13 @@ class State:
         self.player["y"] = newY
 
     def getKey(self):
-        return str(self.player["x"]) + "," + str(self.player["y"]) + "," + str(self.player["airTime"])
+        return (
+            str(self.player["x"])
+            + ","
+            + str(self.player["y"])
+            + ","
+            + str(self.player["airTime"])
+        )
 
     def getHeuristic(self):
         return self.exit - self.player["x"]
@@ -252,7 +295,7 @@ class State:
             "status": gameStatus,
             "airTime": self.player["airTime"],
             "jumps": self.player["jumps"],
-            "jump_locs": self.player["jump_locs"]
+            "jump_locs": self.player["jump_locs"],
         }
 
     def checkOver(self):
@@ -271,8 +314,8 @@ class State:
                 if self.solid[y][x]:
                     result += "#"
                 else:
-                    player=self.player["x"]==x and self.player["y"]==y
-                    exit=self.exit==x
+                    player = self.player["x"] == x and self.player["y"] == y
+                    exit = self.exit == x
                     if player:
                         if exit:
                             result += "w"

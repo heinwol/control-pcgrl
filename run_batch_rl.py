@@ -23,7 +23,9 @@ with open("configs/rl/batch.yaml", "r") as f:
     batch_config = yaml.safe_load(f)
 
 # HACK: deal with nested hyperparameters.
-local_controls, global_controls = batch_config.pop("local_controls"), batch_config.pop("global_controls")
+local_controls, global_controls = batch_config.pop("local_controls"), batch_config.pop(
+    "global_controls"
+)
 
 # Take product of lists of all hyperparameters in `batch_config`.
 keys, vals = zip(*batch_config.items())
@@ -36,30 +38,28 @@ exp_hypers = [dict(zip(keys, exp_hyper)) for exp_hyper in exp_hypers]
 batch_config = Namespace(**batch_config)
 
 
-
 def launch_batch(collect_params=False):
     if collect_params:
         settings_list = []
         assert not EVALUATE
-#   if opts.render_levels:
-#       print('Rendering levels')
-#       n_bins = 4
-#       n_maps = 2
+    #   if opts.render_levels:
+    #       print('Rendering levels')
+    #       n_bins = 4
+    #       n_maps = 2
     if LOCAL:
         print("Testing locally.")
         n_maps = 2
         n_bins = 10
-#       n_bins = 4
+    #       n_bins = 4
     else:
         print("Launching batch of experiments on SLURM.")
         n_maps = 50
         n_bins = 10
 
-#   if LOCAL:
-#       # if running locally, just run a quick test
-#       default_config["n_frames"] = 100000
+    #   if LOCAL:
+    #       # if running locally, just run a quick test
+    #       default_config["n_frames"] = 100000
     i = 0
-
 
     jobs = []
     for exp_cfg in exp_hypers:
@@ -70,8 +70,8 @@ def launch_batch(collect_params=False):
         exp_cfg.update(
             {
                 "evaluate": EVALUATE,
-                "representation": exp_cfg['representation_model'][0],
-                "model": exp_cfg['representation_model'][1],
+                "representation": exp_cfg["representation_model"][0],
+                "model": exp_cfg["representation_model"][1],
             }
         )
 
@@ -86,25 +86,22 @@ def launch_batch(collect_params=False):
         #                         "n_bins": (n_bins,),
         #                         "vis_only": opts.vis_only,
         #                     }
-                    # )
-
+        # )
 
         # FIXME: This is a hack. How to iterate through nested hyperparameter loops in a better way?
         # TODO: Hydra would solve this. Empty this file to make room for hydra.
-        prob_controls = global_controls + local_controls[exp_cfg['problem']]
+        prob_controls = global_controls + local_controls[exp_cfg["problem"]]
         for controls in prob_controls:
             exp_prob_cfg = copy.deepcopy(exp_cfg)
-            exp_prob_cfg.update({
-                "controls": controls
-            })
+            exp_prob_cfg.update({"controls": controls})
             exp_prob_cfg = Namespace(**exp_prob_cfg)
-#                   if controls != ["NONE"] and change_percentage != 1:
+            #                   if controls != ["NONE"] and change_percentage != 1:
 
-#                       continue
+            #                       continue
             # if sum(['3D' in name for name in [prob, rep]]) == 1:
-                # print(f'Dimensions (2D or 3D) of Problem: {prob} and Representation: {rep} '
-                        # 'do not match. Skipping experiment.')
-                # continue
+            # print(f'Dimensions (2D or 3D) of Problem: {prob} and Representation: {rep} '
+            # 'do not match. Skipping experiment.')
+            # continue
 
             # if sum(['holey' in name for name in [prob, rep]]) == 1:
             #     print(f'Holeyness of Problem: {prob} and Representation: {rep} '
@@ -114,31 +111,31 @@ def launch_batch(collect_params=False):
             if exp_prob_cfg.alp_gmm and controls is None:
                 continue
 
-#                       if (not alp_gmm) and len(controls) < 2 and controls != ["NONE"]:
-#                           # For now we're only looking at uniform-random target-sampling with both control metrics
-#                           continue
+            #                       if (not alp_gmm) and len(controls) < 2 and controls != ["NONE"]:
+            #                           # For now we're only looking at uniform-random target-sampling with both control metrics
+            #                           continue
 
             # TODO: integrate evaluate with rllib
-#             if EVALUATE:
-#                 py_script_name = "rl/evaluate_ctrl.py"
-#                 sbatch_name = "rl/eval.sh"
-# #                       elif opts.infer:
-# #                           py_script_name = "infer_ctrl_sb2.py"
+            #             if EVALUATE:
+            #                 py_script_name = "rl/evaluate_ctrl.py"
+            #                 sbatch_name = "rl/eval.sh"
+            # #                       elif opts.infer:
+            # #                           py_script_name = "infer_ctrl_sb2.py"
             # else:
             py_script_name = "control_pcgrl/control_pcgrl/rl/train_ctrl.py"
             sbatch_name = "control_pcgrl/control_pcgrl/rl/train.sh"
-            
+
             # Write the config file with the desired settings
             # exp_config = copy.deepcopy(default_config)
 
             print(f"Saving experiment config:\n{exp_cfg}")
-            
+
             # get the experiment name to name the config file
             # config_name = f"{prob}_{rep}_{exp_name}"
             config_name = get_log_dir(exp_prob_cfg)
             # Edit the sbatch file to load the correct config file
             if not opts.render:
-                if  not LOCAL:
+                if not LOCAL:
                     with open(sbatch_name, "r") as f:
                         content = f.read()
 
@@ -153,25 +150,31 @@ def launch_batch(collect_params=False):
                         content = re.sub(
                             "rl_runs/pcgrl_.*",
                             f"rl_runs/pcgrl_{config_name}_%j.out",
-                            content
+                            content,
                         )
 
                         content = re.sub(
-                            "--job-name=.*",
-                            f"--job-name={config_name}.out",
-                            content
+                            "--job-name=.*", f"--job-name={config_name}.out", content
                         )
                     with open(sbatch_name, "w") as f:
                         f.write(content)
-            
+
             # Get directory of current file
             dir_path = os.path.dirname(os.path.realpath(__file__))
-            with open(os.path.join(dir_path, f"configs/rl/auto/settings_{config_name}.json"), "w") as f:
+            with open(
+                os.path.join(dir_path, f"configs/rl/auto/settings_{config_name}.json"),
+                "w",
+            ) as f:
                 json.dump(vars(exp_prob_cfg), f, ensure_ascii=False, indent=4)
             # Launch the experiment. It should load the saved settings
 
-            if not (EVALUATE and not opts.overwrite_eval and \
-                os.path.isfile(os.path.join('rl_runs', f'{config_name}_log', 'eval_stats.json'))):
+            if not (
+                EVALUATE
+                and not opts.overwrite_eval
+                and os.path.isfile(
+                    os.path.join("rl_runs", f"{config_name}_log", "eval_stats.json")
+                )
+            ):
                 if collect_params:
                     settings_list.append(exp_cfg)
                 elif LOCAL:
@@ -188,7 +191,7 @@ def launch_batch(collect_params=False):
 
                     # jobs.append(job)
             else:
-                print('Skipping evaluation (already have stats saved).')
+                print("Skipping evaluation (already have stats saved).")
             i += 1
     if collect_params:
         return settings_list
@@ -199,12 +202,12 @@ if __name__ == "__main__":
         description="Launch a batch of experiments/evaluations for (controllable) pcgrl"
     )
 
-#   opts.add_argument(
-#       "-rl",
-#       "--render_levels",
-#       help="",
-#       action="store_true",
-#   )
+    #   opts.add_argument(
+    #       "-rl",
+    #       "--render_levels",
+    #       help="",
+    #       action="store_true",
+    #   )
 
     # opts.add_argument(
     #     "-ex",
@@ -250,8 +253,8 @@ if __name__ == "__main__":
     )
     opts.add_argument(
         "--render",
-        action='store_true',
-        help="Visualize agent taking actions in environment by calling environments render function."
+        action="store_true",
+        help="Visualize agent taking actions in environment by calling environments render function.",
     )
     opts.add_argument(
         "-in",
@@ -264,7 +267,7 @@ if __name__ == "__main__":
         type=int,
         default=12,
         help="Number of remote workers to use for rllib training.",
-    ) 
+    )
     opts.add_argument(
         "--n_gpu",
         type=int,
@@ -280,7 +283,7 @@ if __name__ == "__main__":
         "-ovr",
         "--overwrite",
         action="store_true",
-        help="Overwrite previous experiment with same name."
+        help="Overwrite previous experiment with same name.",
     )
     # opts.add_argument(
     #     "-lr",
@@ -290,23 +293,19 @@ if __name__ == "__main__":
     #     help="Learning rate for rllib agent, default is 0.0001."
     # )
     opts.add_argument(
-        "-ga",
-        "--gamma",
-        type=float,
-        default=0.99,
-        help="Discount factor of the MDP."
+        "-ga", "--gamma", type=float, default=0.99, help="Discount factor of the MDP."
     )
     opts.add_argument(
-        '--wandb',
-        help='Whether to use wandb for logging.',
-        action='store_true',
+        "--wandb",
+        help="Whether to use wandb for logging.",
+        action="store_true",
         # action=argparse.BooleanOptionalAction,
         # default=False,
     )
     opts.add_argument(
-        '--record_env',
-        help='Whether to record the environment during inference.',
-        action='store_true',
+        "--record_env",
+        help="Whether to record the environment during inference.",
+        action="store_true",
         # action=argparse.BooleanOptionalAction,
         # default=False,
     )
@@ -317,8 +316,8 @@ if __name__ == "__main__":
     #     default=1,
     # )
     opts.add_argument(
-        '--overwrite_eval',
-        help='Whether to overwrite stats resulting from a previous evaluation.',
+        "--overwrite_eval",
+        help="Whether to overwrite stats resulting from a previous evaluation.",
         action=argparse.BooleanOptionalAction,
         default=True,
     )
@@ -328,8 +327,13 @@ if __name__ == "__main__":
     EVALUATE = opts.evaluate
     LOCAL = opts.local
     executor = submitit.AutoExecutor(os.path.join("rl_runs", "submitit"))
-    executor.update_parameters(gpus_per_node=1, slurm_mem="30GB", cpus_per_task=max(1, opts.n_cpu), slurm_time="5:00:00",
-                                job_name="pcgrl",)
+    executor.update_parameters(
+        gpus_per_node=1,
+        slurm_mem="30GB",
+        cpus_per_task=max(1, opts.n_cpu),
+        slurm_time="5:00:00",
+        job_name="pcgrl",
+    )
     if opts.cross_eval:
         settings_list = launch_batch(collect_params=True)
         compile_results(settings_list, no_plot=opts.no_plot)

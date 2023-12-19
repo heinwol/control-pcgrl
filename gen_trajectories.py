@@ -26,7 +26,7 @@ TILES_MAP = {
     ".": "empty",
 }
 
-#TODO: Can get this from environment instead.
+# TODO: Can get this from environment instead.
 INT_MAP = {
     "empty": 0,
     "solid": 1,
@@ -38,6 +38,7 @@ INT_MAP = {
     "spider": 7,
 }
 
+
 def load_goal_levels(cfg):
     lvl_dir = glob.glob(os.path.join("control_pcgrl", "il", "playable_maps", "*.txt"))
     levels = []
@@ -46,6 +47,7 @@ def load_goal_levels(cfg):
         levels.append(int_arr_from_str_arr(to_2d_array_level(f)))
 
     return np.array(levels)
+
 
 # Converts from string[][] to 2d int[][]
 def int_arr_from_str_arr(map):
@@ -56,6 +58,7 @@ def int_arr_from_str_arr(map):
             new_row.append(INT_MAP[map[row_idx][col_idx]])
         int_map.append(new_row)
     return int_map
+
 
 # Reads in .txt playable map and converts it to string[][]
 def to_2d_array_level(file_name):
@@ -77,6 +80,7 @@ def to_2d_array_level(file_name):
         new_row = row[1 : len(row) - 1]
         level.append(new_row)
     return level
+
 
 n_train_samples = 1_000_000
 

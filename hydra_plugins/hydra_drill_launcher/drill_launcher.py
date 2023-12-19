@@ -6,7 +6,13 @@ import time
 from typing import Any, Dict, List, Optional, Sequence
 
 from hydra.core.singleton import Singleton
-from hydra.core.utils import JobReturn, JobStatus, filter_overrides, run_job, setup_globals
+from hydra.core.utils import (
+    JobReturn,
+    JobStatus,
+    filter_overrides,
+    run_job,
+    setup_globals,
+)
 from hydra.plugins.launcher import Launcher
 from hydra.types import HydraContext, TaskFunction
 from omegaconf import DictConfig, OmegaConf, open_dict
@@ -19,7 +25,6 @@ log = logging.getLogger(__name__)
 
 
 class BaseDrillLauncher(Launcher):
-
     _EXECUTOR = "abstract"
 
     def __init__(self, **params: Any) -> None:
@@ -110,7 +115,7 @@ class BaseDrillLauncher(Launcher):
         )
         init_keys = specific_init_keys | {"submitit_folder"}
 
-        if self._EXECUTOR != 'cross-eval':
+        if self._EXECUTOR != "cross-eval":
             executor = submitit.AutoExecutor(cluster=self._EXECUTOR, **init_params)
 
             # specify resources/parameters
@@ -156,24 +161,29 @@ class BaseDrillLauncher(Launcher):
             #     sweep_config.hydra.job.num = idx
             sweep_configs.append(sweep_config)
 
-        
         # This is the custom drill bit.
         sweep_configs = [validate_config(c) for c in sweep_configs]
-        job_params = [j for i, j in enumerate(job_params) if sweep_configs[i] is not False]
+        job_params = [
+            j for i, j in enumerate(job_params) if sweep_configs[i] is not False
+        ]
         # End custom drill bit.
 
-        if self._EXECUTOR == 'cross-eval':
+        if self._EXECUTOR == "cross-eval":
             setup_globals()
             sweep_configs = [c for c in sweep_configs if c is not False]
 
             # NOTE: We're only able to get the sweeper params when they're in the yaml (not command line).
             sweep_params = self.config.hydra.sweeper.params
-        
+
             from control_pcgrl.rl.cross_eval import cross_evaluate
+
             cross_evaluate(self.config, sweep_configs, sweep_params)
 
             # Just a dummy to placate hydra.
-            return [JobReturn(_return_value=None, status=JobStatus.COMPLETED) for j in sweep_configs]
+            return [
+                JobReturn(_return_value=None, status=JobStatus.COMPLETED)
+                for j in sweep_configs
+            ]
 
         jobs = executor.map_array(self, *zip(*job_params))
         return [j.results()[0] for j in jobs]
@@ -182,11 +192,14 @@ class BaseDrillLauncher(Launcher):
 class BasicLauncher(BaseDrillLauncher):
     _EXECUTOR = "debug"
 
+
 class LocalLauncher(BaseDrillLauncher):
     _EXECUTOR = "local"
 
+
 class SlurmLauncher(BaseDrillLauncher):
     _EXECUTOR = "slurm"
+
 
 class CrossEvalLauncher(BaseDrillLauncher):
     _EXECUTOR = "cross-eval"

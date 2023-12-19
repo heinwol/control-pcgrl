@@ -22,11 +22,14 @@ from control_pcgrl.envs.reps.representation import Representation
 """
 The PCGRL GYM Environment
 """
+
+
 class PcgrlEnv(gym.Env):
     """
     The type of supported rendering
     """
-    metadata = {'render.modes': ['human', 'rgb_array', 'gtk']}
+
+    metadata = {"render.modes": ["human", "rgb_array", "gtk"]}
 
     """
     Constructor for the interface.
@@ -36,6 +39,7 @@ class PcgrlEnv(gym.Env):
         rep (string): the current representation. This name has to be defined in REPRESENTATIONS
         constant in gym_pcgrl.envs.reps.__init__.py
     """
+
     def __init__(self, cfg: Config, prob="binary", rep="narrow"):
         self.render_mode = cfg.render_mode
         self._has_been_assigned_map = False  # TODO: Factor this out into a ... wrapper?
@@ -53,10 +57,11 @@ class PcgrlEnv(gym.Env):
         self._prob: Problem = PROBLEMS[prob](cfg=cfg)
         self._prob.init_tile_int_dict()
         self._rep_cls = REPRESENTATIONS[rep]
-        self._rep: Representation = self._rep_cls(cfg=cfg, 
-                                                  empty_tile_index=self._prob.get_tile_int(self._prob._empty_tile),
-                                                  wall_tile_index=self._prob.get_tile_int(self._prob._wall_tile)
-                                                ) 
+        self._rep: Representation = self._rep_cls(
+            cfg=cfg,
+            empty_tile_index=self._prob.get_tile_int(self._prob._empty_tile),
+            wall_tile_index=self._prob.get_tile_int(self._prob._wall_tile),
+        )
         self._rep_is_wrapped: bool = False
         self._rep_stats = None
         self.metrics = {}
@@ -76,21 +81,28 @@ class PcgrlEnv(gym.Env):
         self.seed()
         self.viewer = None
 
-        self.metric_trgs = collections.OrderedDict(self._prob.static_trgs)  # FIXME: redundant??
+        self.metric_trgs = collections.OrderedDict(
+            self._prob.static_trgs
+        )  # FIXME: redundant??
 
         # Normalize reward weights w.r.t. bounds of each metric.
         self._reward_weights = {
-            k: v * 1 / (self._prob.cond_bounds[k][1] - self._prob.cond_bounds[k][0]) \
-                for k, v in self._prob._reward_weights.items()
+            k: v * 1 / (self._prob.cond_bounds[k][1] - self._prob.cond_bounds[k][0])
+            for k, v in self._prob._reward_weights.items()
         }
         self._ctrl_reward_weights = {
-            k: v * 1 / (self._prob.cond_bounds[k][1] - self._prob.cond_bounds[k][0]) \
-                for k, v in self._prob._ctrl_reward_weights.items()
+            k: v * 1 / (self._prob.cond_bounds[k][1] - self._prob.cond_bounds[k][0])
+            for k, v in self._prob._ctrl_reward_weights.items()
         }
 
         self.compute_stats = False
 
-        self.observation_space, self.action_space, self._max_changes, self._max_iterations = None, None, None, None
+        (
+            self.observation_space,
+            self.action_space,
+            self._max_changes,
+            self._max_iterations,
+        ) = (None, None, None, None)
         self.adjust_param(cfg=cfg)
 
     @override(TaskSettableEnv)
@@ -110,10 +122,10 @@ class PcgrlEnv(gym.Env):
             self.cur_map_idx = map_idx
             self.switch_env = True
 
-    def get_rep(self):       # ZJ: why do we need this?
+    def get_rep(self):  # ZJ: why do we need this?
         return self._rep
 
-    def get_map(self):      # ZJ: why not use self._get_rep_map()?
+    def get_map(self):  # ZJ: why not use self._get_rep_map()?
         return self._rep._map
 
     def get_map_dims(self):
@@ -139,6 +151,7 @@ class PcgrlEnv(gym.Env):
     Returns:
         int[]: An array of 1 element (the used seed)
     """
+
     def seed(self, seed=None):
         seed = self._rep.seed(seed)
         self._prob.seed(seed)
@@ -155,24 +168,35 @@ class PcgrlEnv(gym.Env):
         Observation: the current starting observation have structure defined by
         the Observation Space
     """
+
     def reset(self, *, seed=None, options=None):
         self._changes = 0
         self._iteration = 0
         # avoid default probabilities with normal distribution if we seed manually
-        if hasattr(self._prob, '_random'):
+        if hasattr(self._prob, "_random"):
             probs = self._prob._random.random(size=len(self._prob.get_tile_types()))
-            self._prob._prob = {tile: prob for tile, prob in zip(self._prob.get_tile_types(), probs)}
+            self._prob._prob = {
+                tile: prob for tile, prob in zip(self._prob.get_tile_types(), probs)
+            }
         if self.switch_env:
             # self._rep.reset(self.get_map_dims()[:-1], get_int_prob(self._prob._prob, self._prob.get_tile_types()),
-            self._rep.reset(self.map_shape, get_int_prob(self._prob._prob, self._prob.get_tile_types()),
-                next_map=self._prob.eval_maps[self.cur_map_idx])
+            self._rep.reset(
+                self.map_shape,
+                get_int_prob(self._prob._prob, self._prob.get_tile_types()),
+                next_map=self._prob.eval_maps[self.cur_map_idx],
+            )
             self.switch_env = False
         else:
             # self._rep.reset(self.get_map_dims()[:-1], get_int_prob(self._prob._prob, self._prob.get_tile_types()))
-            self._rep.reset(self.map_shape, get_int_prob(self._prob._prob, self._prob.get_tile_types()))
+            self._rep.reset(
+                self.map_shape,
+                get_int_prob(self._prob._prob, self._prob.get_tile_types()),
+            )
         # continuous = False if not hasattr(self._prob, 'get_continuous') else self._prob.get_continuous()
         if self._get_stats_on_step:
-            self._rep_stats = self._prob.get_stats(self.get_string_map(self._get_rep_map(), self._prob.get_tile_types()))  #, continuous=continuous))
+            self._rep_stats = self._prob.get_stats(
+                self.get_string_map(self._get_rep_map(), self._prob.get_tile_types())
+            )  # , continuous=continuous))
         self.metrics = self._rep_stats
         self._prob.reset(self._rep_stats)
         self._prob._prob = probs
@@ -181,7 +205,9 @@ class PcgrlEnv(gym.Env):
         if issubclass(type(self._rep), MultiAgentRepresentationWrapper):
             observation = self._rep.get_observation(all_agents=True)
         else:
-            observation = self._rep.get_observation() # all_agents parameter does not exist for representations without MultiAgentWrapper
+            observation = (
+                self._rep.get_observation()
+            )  # all_agents parameter does not exist for representations without MultiAgentWrapper
 
         # observation["heatmap"] = self._heatmap.copy()
 
@@ -193,6 +219,7 @@ class PcgrlEnv(gym.Env):
     Returns:
         int: the tile number that can be used for padding
     """
+
     def get_border_tile(self) -> int:
         return self._prob.get_tile_types().index(self._prob._border_tile)
 
@@ -202,6 +229,7 @@ class PcgrlEnv(gym.Env):
     Returns:
         int: the number of different tiles
     """
+
     def get_num_tiles(self):
         return len(self._prob.get_tile_types())
 
@@ -218,6 +246,7 @@ class PcgrlEnv(gym.Env):
         **kwargs (dict(string,any)): the defined parameters depend on the used
         representation and the used problem
     """
+
     def adjust_param(self, cfg: Config):
         self.map_shape = cfg.task.map_shape
         self.evaluation_env = cfg.evaluation_env
@@ -228,23 +257,31 @@ class PcgrlEnv(gym.Env):
 
         # Wrap the representation if we haven't already. (Sketchy.)
         if not self._rep_is_wrapped:
-            self._rep = wrap_rep(self._rep, _prob_cls, self.get_map_dims(), 
-                                 cfg=cfg)
+            self._rep = wrap_rep(self._rep, _prob_cls, self.get_map_dims(), cfg=cfg)
             self._rep_is_wrapped = True
 
         if cfg.change_percentage is not None:
             assert 0 < cfg.change_percentage
-            self._max_changes = max(int(cfg.change_percentage * np.prod(self.get_map_dims()[:-1])), 1)
+            self._max_changes = max(
+                int(cfg.change_percentage * np.prod(self.get_map_dims()[:-1])), 1
+            )
         else:
             self._max_changes = None
 
-        self._max_iterations = np.prod(self.get_map_dims()[:-1]) * cfg.max_board_scans + 1
+        self._max_iterations = (
+            np.prod(self.get_map_dims()[:-1]) * cfg.max_board_scans + 1
+        )
         self._prob.adjust_param(cfg=cfg)
         self._rep.adjust_param(cfg=cfg)
-        self.action_space = self._rep.get_action_space(self.get_map_dims()[:-1], self.get_num_tiles())
+        self.action_space = self._rep.get_action_space(
+            self.get_map_dims()[:-1], self.get_num_tiles()
+        )
         self.observation_space = self._rep.get_observation_space(
             # self.get_map_dims()[:-1], self.get_num_observable_tiles())
-            cfg.task.obs_window, cfg.task.map_shape, self.get_num_observable_tiles())
+            cfg.task.obs_window,
+            cfg.task.map_shape,
+            self.get_num_observable_tiles(),
+        )
 
         # self.observation_space.spaces['heatmap'] = spaces.Box(
         #     low=0, high=self._max_changes, dtype=np.uint8, shape=self.get_map_dims()[:-1])
@@ -264,20 +301,21 @@ class PcgrlEnv(gym.Env):
         boolean: if the problem eneded (episode is over)
         dictionary: debug information that might be useful to understand what's happening
     """
+
     def step(self, action):
         """Step the environment.
 
         Args:
             action (_type_): The actions to be taken by the generator agent.
-            compute_stats (bool, optional): Compute self._rep_stats even when we don't need them for (sparse) reward. 
+            compute_stats (bool, optional): Compute self._rep_stats even when we don't need them for (sparse) reward.
                 for visualizing, e.g., path-length during inference. Defaults to False.
 
         Returns:
             _type_: _description_
         """
-       #print('action in pcgrl_env: {}'.format(action))
+        # print('action in pcgrl_env: {}'.format(action))
         self._iteration += 1
-        #save copy of the old stats to calculate the reward
+        # save copy of the old stats to calculate the reward
         old_stats = self._rep_stats
         # update the current state to the new state based on the taken action
 
@@ -312,19 +350,23 @@ class PcgrlEnv(gym.Env):
         # Only get level stats at the end of the level, for sparse, loss-based reward.
         # Uncomment the below to use dense rewards (also need to modify the ParamRew wrapper).
         if change > 0:
-        # if done:
-        # if done or self.compute_stats:
+            # if done:
+            # if done or self.compute_stats:
 
             # old_path_coords = set([tuple(e) for e in self._prob.old_path_coords])
             # last_build_coords = tuple(self._rep._new_coords)
             # if last_build_coords in old_path_coords:
             #     old_path_coords.remove(last_build_coords)
             #     self._prob.path_to_erase = old_path_coords
-            self._rep_stats = self._prob.get_stats(self.get_string_map(self._get_rep_map(), self._prob.get_tile_types()))
+            self._rep_stats = self._prob.get_stats(
+                self.get_string_map(self._get_rep_map(), self._prob.get_tile_types())
+            )
 
             if self._rep_stats is None:
-                raise Exception("self._rep_stats in pcgrl_env.py is None, what happened? Maybe you should check your path finding"
-                "function in your problem class.")
+                raise Exception(
+                    "self._rep_stats in pcgrl_env.py is None, what happened? Maybe you should check your path finding"
+                    "function in your problem class."
+                )
 
             info = self._prob.get_debug_info(self._rep_stats, old_stats)
 
@@ -332,7 +374,9 @@ class PcgrlEnv(gym.Env):
             info = {}
 
         info["iterations"] = self._iteration
-        info["changes"] = self._changes                    # noop is removed now, so this is the same as iteration
+        info[
+            "changes"
+        ] = self._changes  # noop is removed now, so this is the same as iteration
         info["max_iterations"] = self._max_iterations
         info["max_changes"] = self._max_changes
 
@@ -353,16 +397,28 @@ class PcgrlEnv(gym.Env):
     Returns:
         img or boolean: img for rgb_array rendering and boolean for human rendering
     """
+
     def render(self):
-        img: PIL.Image = self._prob.render(self.get_string_map(
-            self._get_rep_map(), self._prob.get_tile_types(), continuous=self._prob.is_continuous()))
+        img: PIL.Image = self._prob.render(
+            self.get_string_map(
+                self._get_rep_map(),
+                self._prob.get_tile_types(),
+                continuous=self._prob.is_continuous(),
+            )
+        )
         # Transpose image
         # img = img.transpose(PIL.Image.TRANSPOSE)
-        img = self._rep.render(img, self._prob._tile_size, self._prob._border_size).convert("RGB")
+        img = self._rep.render(
+            img, self._prob._tile_size, self._prob._border_size
+        ).convert("RGB")
 
-        if self.render_mode == 'rgb_array' or self.render_mode == 'gtk' or self.render_mode == 'save_gif':
+        if (
+            self.render_mode == "rgb_array"
+            or self.render_mode == "gtk"
+            or self.render_mode == "save_gif"
+        ):
             return np.array(img)
-        elif self.render_mode == 'image' or self.render_mode is None:
+        elif self.render_mode == "image" or self.render_mode is None:
             return img
         # elif self.render_mode == 'human':
 
@@ -393,6 +449,7 @@ class PcgrlEnv(gym.Env):
     """
     Close the environment rendering window.
     """
+
     def close(self):
         if self.viewer:
             self.viewer.close()
