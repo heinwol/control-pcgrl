@@ -5,12 +5,17 @@ version: '3'
 vars:
   GREETING: Hello, World!
   WORKDIR: $PWD
+  RCLONE_IGNORE: >
+    --exclude ".direnv/**"
+    --exclude ".nix-env/**"
+    --exclude ".venv/**"
 
 tasks:
   default:
     cmds:
       - echo "{{.GREETING}}, {{.WORKDIR}}"
     # silent: true
+
   profile-build:
     cmds:
       - nix build .#devEnv --out-link .nix-env
@@ -19,11 +24,13 @@ tasks:
       - flake.lock
     generates:
       - .nix-env
+
   rclone:
     cmds:
-      - >
-        rclone sync {{.WORKDIR}} cds:Documents/progs/control-pcgrl
-        --exclude ".direnv/**"
-        --exclude ".nix-env/**"
-        --exclude ".venv/**"
+      - rclone sync {{.WORKDIR}} cds:Documents/progs/control-pcgrl {{.RCLONE_IGNORE}}
+  
+  check:
+    cmds:
+      - rclone check {{.WORKDIR}} cds:Documents/progs/control-pcgrl {{.RCLONE_IGNORE}}
+
 # --exclude ".git/**"

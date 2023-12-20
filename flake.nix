@@ -128,6 +128,7 @@
               # tk.dev
               # xorg.libX11
               pythonPkgs.tkinter
+              (poetry.override { python3 = pkgs.python310; })
             ]
             ++ buildStuff;
 
