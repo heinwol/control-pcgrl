@@ -19,7 +19,8 @@ import gymnasium as gym
 from gymnasium.spaces import Tuple
 
 from ray import air, tune
-from ray.air import Checkpoint
+
+# from ray.air import Checkpoint
 from ray.rllib.algorithms import AlgorithmConfig
 from ray.rllib.algorithms.ppo import PPO as PPOTrainer
 from ray.rllib.algorithms.algorithm import Algorithm

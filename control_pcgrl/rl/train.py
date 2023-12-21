@@ -67,9 +67,10 @@ from control_pcgrl.rl.rllib_utils import ControllableTrainerFactory
 from control_pcgrl.configs.config import Config, EvalConfig
 import control_pcgrl
 from control_pcgrl.envs.probs import PROBLEMS
-from control_pcgrl.envs.probs.minecraft.minecraft_3D_holey_maze_prob import (
-    Minecraft3DholeymazeProblem,
-)
+
+# from control_pcgrl.envs.probs.minecraft.minecraft_3D_holey_maze_prob import (
+#     Minecraft3DholeymazeProblem,
+# )
 from control_pcgrl.task_assignment import set_map_fn
 from rllib_inference import get_latest_ckpt
 
@@ -510,8 +511,10 @@ def main(cfg: Config) -> None:
 
     if not cfg.overwrite and os.path.exists(
         cfg.log_dir
-    ):  # if loading from previous checkpoint
+    ):  
+        # if loading from previous checkpoint
         # trainer = trainer_config.build()
+        print(log_dir)
         tuner = tune.Tuner.restore(os.path.join(str(log_dir), trainer_name))
         # Note that the `best_result` must always refer to the single experiment, as we are not sweeping over hyperparameters
         # with ray.tune.fit.
