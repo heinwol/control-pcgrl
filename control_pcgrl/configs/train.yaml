@@ -14,8 +14,12 @@ defaults:
   # - override hydra/launcher: submitit_local
   # - override hydra/launcher: submitit_slurm
 
+debug: true
+render_mode: save_gif
+
 hydra:
   verbose: true
+
   sweeper:
     params:
       #exp_id: 0, 1, 2

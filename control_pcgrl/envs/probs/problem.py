@@ -333,7 +333,12 @@ class Problem(ABC):
                 font = ImageFont.truetype("arial.ttf", font_size)
             except OSError:
                 try:
-                    font = ImageFont.truetype("LiberationMono-Regular.ttf", font_size)
+                    # /usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf
+                    # font = ImageFont.truetype("LiberationMono-Regular.ttf", font_size)
+                    font = ImageFont.truetype(
+                        "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+                        font_size,
+                    )
                 except OSError:
                     font = ImageFont.truetype("SFNSMono.ttf", 32)
             # draw.text((x, y),"Sample Text",(r,g,b))
