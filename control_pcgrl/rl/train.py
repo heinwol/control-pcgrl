@@ -14,6 +14,7 @@ import gymnasium as gym
 import imageio
 from tqdm import tqdm
 import hydra
+import logging
 import matplotlib
 import numpy as np
 from hydra.core.config_store import ConfigStore
@@ -82,6 +83,7 @@ matplotlib.use("Agg")
 n_steps = 0
 best_mean_reward, n_steps = -np.inf, 0
 
+log = logging.getLogger(__name__)
 
 # TODO: Render this bloody scatter plot of control targets/vals!
 # class CustomWandbLogger(WandbLogger):
@@ -186,7 +188,11 @@ def main(cfg: Config) -> None:
 
                 # print(obs.transpose(2, 0, 1)[:, 10:-10, 10:-10])
                 if cfg.render:
-                    env.render()
+                    it = env.render()
+                    log.error(type(it))
+
+                log.error("LALALALALALALA")
+
                 if isinstance(done, dict):
                     done = done["__all__"]
                 n_step += 1
@@ -509,9 +515,7 @@ def main(cfg: Config) -> None:
         metric="episode_reward_mean",
     )
 
-    if not cfg.overwrite and os.path.exists(
-        cfg.log_dir
-    ):  
+    if not cfg.overwrite and os.path.exists(cfg.log_dir):
         # if loading from previous checkpoint
         # trainer = trainer_config.build()
         print(log_dir)

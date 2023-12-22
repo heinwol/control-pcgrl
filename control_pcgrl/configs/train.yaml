@@ -14,6 +14,9 @@ defaults:
   # - override hydra/launcher: submitit_local
   # - override hydra/launcher: submitit_slurm
 
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
 debug: true
 render_mode: save_gif
 

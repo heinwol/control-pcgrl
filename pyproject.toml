@@ -64,6 +64,7 @@ pytorch-neat = { url = "https://github.com/heinwol/PyTorch-NEAT/releases/downloa
 #     # "tensorflow-cpu",
 #     # "tensorflow-gpu",
 # ] }
+hydra-colorlog = "^1.2.0"
 
 [tool.poetry.group.control_pcgrl.dependencies]
 pygobject = "^3.46.0"
