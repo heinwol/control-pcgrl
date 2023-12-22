@@ -116,6 +116,15 @@
         #   propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ buildStuff;
         # });
 
+        additional-fonts = pkgs.stdenv.mkDerivation {
+          name = "additional-fonts";
+          src = ./additional-data/fonts;
+          installPhase = ''
+            mkdir -p $out/share/fonts/truetype
+            cp $src/* $out/share/fonts/truetype
+          '';
+        };
+
         devEnvPopulated =
           (devEnv.env.overrideAttrs (oldAttrs: rec {
             buildInputs = with pkgs; [
@@ -131,6 +140,10 @@
               (poetry.override { python3 = pkgs.python310; })
             ]
             ++ buildStuff;
+
+            FONTCONFIG_FILE = pkgs.makeFontsConf {
+              fontDirectories = [ pkgs.liberation_ttf ];
+            };
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
               # "/usr/local/cuda/lib64"
