@@ -4,16 +4,16 @@ version: '3'
 
 vars:
   GREETING: Hello, World!
-  WORKDIR: $PWD
+  # WORKDIR: $PWD
   RCLONE_IGNORE: >
     --exclude ".direnv/**"
     --exclude ".nix-env/**"
     --exclude ".venv/**"
 
 tasks:
-  default:
-    cmds:
-      - echo "{{.GREETING}}, {{.WORKDIR}}"
+  # default:
+  #   cmds:
+  #     - echo "{{.GREETING}}, {{.WORKDIR}}"
     # silent: true
 
   profile-build:
@@ -27,14 +27,14 @@ tasks:
 
   rclone:
     cmds:
-      - rclone sync {{.WORKDIR}} cds:Documents/progs/control-pcgrl {{.RCLONE_IGNORE}}
+      - rclone {{.CLI_ARGS}} . cds:Documents/progs/control-pcgrl {{.RCLONE_IGNORE}}
 
-  rclone-pull:
+  rclone-inv:
     cmds:
-      - rclone sync cds:Documents/progs/control-pcgrl {{.WORKDIR}} {{.RCLONE_IGNORE}}
+      - rclone {{.CLI_ARGS}} cds:Documents/progs/control-pcgrl . {{.RCLONE_IGNORE}}
 
-  check:
-    cmds:
-      - rclone check {{.WORKDIR}} cds:Documents/progs/control-pcgrl {{.RCLONE_IGNORE}}
+  # check:
+  #   cmds:
+  #     - rclone check . cds:Documents/progs/control-pcgrl {{.RCLONE_IGNORE}}
 
 # --exclude ".git/**"
