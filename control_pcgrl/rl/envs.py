@@ -27,7 +27,7 @@ from control_pcgrl.envs.reps.turtle_rep import TurtleRepresentation
 # from utils import RenderMonitor, get_map_width
 
 
-def make_env(cfg: Config):
+def make_env(cfg: Config) -> PcgrlEnv:
     """
     Initialize and wrap the environment.
 

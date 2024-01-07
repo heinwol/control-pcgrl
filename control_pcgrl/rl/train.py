@@ -75,6 +75,8 @@ from control_pcgrl.envs.probs import PROBLEMS
 from control_pcgrl.task_assignment import set_map_fn
 from rllib_inference import get_latest_ckpt
 
+from control_pcgrl.hw_mods import utils as hw_utils
+
 # Annoying, but needed since we can't go through `globals()` from inside hydra SLURM job. Is there a better way?
 MODELS = {"NCA": NCA, "DenseNCA": DenseNCA, "SeqNCA": SeqNCA, "SeqNCA3D": SeqNCA3D}
 
@@ -82,8 +84,6 @@ matplotlib.use("Agg")
 
 n_steps = 0
 best_mean_reward, n_steps = -np.inf, 0
-
-log = logging.getLogger(__name__)
 
 # TODO: Render this bloody scatter plot of control targets/vals!
 # class CustomWandbLogger(WandbLogger):
@@ -96,6 +96,9 @@ log = logging.getLogger(__name__)
 
 @hydra.main(version_base=None, config_path="../configs", config_name="train")
 def main(cfg: Config) -> None:
+    log = logging.getLogger(__name__)
+    hw_utils.capture_std_messages_with_logger(log)
+
     cfg = validate_config(cfg)
     if cfg is False:
         print("Invalid config!")
@@ -110,6 +113,7 @@ def main(cfg: Config) -> None:
         is_3D_env = True
 
     log_dir = cfg.log_dir
+    log.debug(f"log directory is {log_dir}")
 
     if not cfg.load and not cfg.overwrite:
         if os.path.isdir(log_dir):
@@ -191,7 +195,7 @@ def main(cfg: Config) -> None:
                     it = env.render()
                     log.error(type(it))
 
-                log.error("LALALALALALALA")
+                # log.error("LALALALALALALA")
 
                 if isinstance(done, dict):
                     done = done["__all__"]
