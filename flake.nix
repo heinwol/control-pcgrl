@@ -14,11 +14,24 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
-        pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-        };
-        # pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = (import nixpkgs
+          {
+            inherit system;
+            config.allowUnfree = true;
+          });
+        # .extend
+        # (final: prev: rec {
+        #   python310 = prev.python310.override {
+        #     packageOverrides = self: super: {
+        #       eventlet = super.eventlet.overrideAttrs (old: {
+        #         doCheck = false;
+        #         doInstallCheck = false;
+        #       });
+        #     };
+        #   };
+
+        #   python310Packages = python310.pkgs;
+        # });
         pythonPkgs = pkgs.python310Packages;
         # inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
         poetry2nixLib = (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; });
@@ -122,7 +135,7 @@
               go-task
               direnv
               # tk.dev
-              # pkgs.cudaPackages_12.cudnn
+              pkgs.cudaPackages_12.cudatoolkit
               # tcl
               # tk
               # tk.dev
@@ -138,6 +151,7 @@
               pkgs.cudaPackages_12.cudnn
               pkgs.cudaPackages_12.nccl
               pkgs.cudaPackages_12.cudatoolkit
+              pkgs.cudaPackages_12.libcublas
             ];
 
             PATH = pkgs.lib.makeBinPath [
@@ -145,6 +159,7 @@
               pkgs.cudaPackages_12.nccl
               pkgs.cudaPackages_12.cudnn
               pkgs.cudaPackages_12.cudatoolkit
+              pkgs.cudaPackages_12.libcublas
             ];
 
             shellHook = ''
@@ -179,5 +194,6 @@
           default = packaged;
           # default = simple;
         };
+        pkgs = pkgs;
       });
 }
