@@ -329,18 +329,26 @@ class Problem(ABC):
             draw = ImageDraw.Draw(lvl_image)
             # font = ImageFont.truetype(<font-file>, <font-size>)
             font_size = 32
-            try:
-                font = ImageFont.truetype("arial.ttf", font_size)
-            except OSError:
-                try:
-                    # /usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf
-                    # font = ImageFont.truetype("LiberationMono-Regular.ttf", font_size)
-                    font = ImageFont.truetype(
-                        "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
-                        font_size,
-                    )
-                except OSError:
-                    font = ImageFont.truetype("SFNSMono.ttf", 32)
+
+            def get_fonts(paths: list[str]) -> ImageFont.FreeTypeFont:
+                for path in paths:
+                    try:
+                        font = ImageFont.truetype(path, font_size)
+                        return font
+                    except:
+                        pass
+                raise OSError("cannot open resource")
+
+            font = get_fonts(
+                [
+                    "arial.ttf",
+                    "LiberationMono-Regular.ttf",
+                    "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+                    "/usr/share/fonts/truetype/LiberationMono-Regular.ttf",
+                    "SFNSMono.ttf",
+                ]
+            )
+
             # draw.text((x, y),"Sample Text",(r,g,b))
             draw.text(
                 ((full_width - 1) * self._tile_size / 2, 0),

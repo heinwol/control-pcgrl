@@ -89,7 +89,9 @@ wandb/
 # heinwol modifications
 .direnv
 submodules/
-**/result
+result
+result-bin
+result-dev
 .venv
 
 .nix-env
