@@ -46,6 +46,22 @@
           gobject-introspection # -//-
         ];
 
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+          # "/usr/local/cuda/lib64"
+          # "/usr/local/cuda/extras/CUPTI/lib64"
+          pkgs.cudaPackages_12.cudnn
+          pkgs.cudaPackages_12.nccl
+          pkgs.cudaPackages_12.cudatoolkit
+          pkgs.cudaPackages_12.libcublas
+        ];
+        PATH = pkgs.lib.makeBinPath [
+          # "/usr/local/cuda/"
+          pkgs.cudaPackages_12.nccl
+          pkgs.cudaPackages_12.cudnn
+          pkgs.cudaPackages_12.cudatoolkit
+          pkgs.cudaPackages_12.libcublas
+        ];
+
         pypkgs-build-requirements = with pkgs; {
           # box2d-py = [ "setuptools" swig4 ];
           atari-py = [ "setuptools" cmake zlib.dev ];
@@ -95,9 +111,17 @@
             #   # propagatedBuildInputs = (prev.propagatedBuildInputs or [ ]) ++ [ cmake ];
             #   nativeBuildInputs = (prev.nativeBuildInputs or [ ]) ++ [ ];
             # });
-            # tensorflow = super.tensorflow.overrideAttrs (prev: {
-            #   preferWheel = false;
-            # });
+            nvidia-cusparse-cu12 = super.nvidia-cusparse-cu12.overrideAttrs (oldAttrs: {
+              autoPatchelfIgnoreMissingDeps = true;
+              # (Bytecode collision happens with nvidia-cusolver-cu11.)
+              postFixup = ''
+                rm -r $out/${self.python.sitePackages}/nvidia/{__pycache__,__init__.py}
+              '';
+              propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ [
+                pkgs.cudaPackages_12.cudatoolkit
+                # self.nvidia-cublas-cu12
+              ];
+            });
             pygame = pkgs.python310Packages.pygame.overrideAttrs (oldAttrs: {
               version = super.pygame.version;
             });
@@ -117,6 +141,31 @@
             #   preferWheel = false;
             # });
           }
+          // (
+            let
+              fixNvidiaPackageCollision = pname: {
+                ${pname} = super.${pname}.overrideAttrs (oldAttrs: {
+                  autoPatchelfIgnoreMissingDeps = true;
+                  postFixup = ''
+                    rm -r $out/${self.python.sitePackages}/nvidia/{__pycache__,__init__.py}
+                  '';
+                });
+              };
+              fixAll = pnames: pkgs.lib.attrsets.mergeAttrsList (map fixNvidiaPackageCollision pnames);
+            in
+            (fixAll [
+              "nvidia-cuda-cupti-cu12"
+              "nvidia-cuda-nvrtc-cu12"
+              "nvidia-cuda-runtime-cu12"
+              "nvidia-cudnn-cu12"
+              "nvidia-cufft-cu12"
+              "nvidia-curand-cu12"
+              "nvidia-cusolver-cu12"
+              "nvidia-nccl-cu12"
+              "nvidia-nvtx-cu12"
+              "nvidia-nvjitlink-cu12"
+            ])
+          )
         );
 
         devEnv = (poetry2nixLib.mkPoetryEnv {
@@ -145,22 +194,7 @@
             ]
             ++ buildStuff;
 
-            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-              # "/usr/local/cuda/lib64"
-              # "/usr/local/cuda/extras/CUPTI/lib64"
-              pkgs.cudaPackages_12.cudnn
-              pkgs.cudaPackages_12.nccl
-              pkgs.cudaPackages_12.cudatoolkit
-              pkgs.cudaPackages_12.libcublas
-            ];
-
-            PATH = pkgs.lib.makeBinPath [
-              # "/usr/local/cuda/"
-              pkgs.cudaPackages_12.nccl
-              pkgs.cudaPackages_12.cudnn
-              pkgs.cudaPackages_12.cudatoolkit
-              pkgs.cudaPackages_12.libcublas
-            ];
+            inherit LD_LIBRARY_PATH PATH;
 
             shellHook = ''
               export CUDA_PATH=${pkgs.cudaPackages_12.cudatoolkit}
