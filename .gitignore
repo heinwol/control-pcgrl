@@ -95,3 +95,4 @@ submodules/
 .nix-env
 .task
 !.vscode
+playthings

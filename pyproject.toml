@@ -80,6 +80,8 @@ pybrain = "^0.3"
 [tool.poetry.group.dev.dependencies]
 pylance = "^0.8.16"
 pyarrow = "13.*"
+jupyter = "^1.0.0"
+jupyterlab = "^4.0.10"
 
 [tool.mypy]
 plugins = ["returns.contrib.mypy.returns_plugin"]
