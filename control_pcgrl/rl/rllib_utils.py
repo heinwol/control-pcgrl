@@ -1,7 +1,9 @@
+from typing import cast
 import numpy as np
 from control_pcgrl.reward_model_wrappers import init_reward_model
 from ray.rllib.algorithms.ppo import PPO as RlLibPPOTrainer
 from ray.rllib.algorithms.qmix import QMix as RlLibQMIXTrainer
+from ray.rllib.algorithms import Algorithm
 import torchinfo
 import torch as th
 
@@ -34,6 +36,7 @@ def ControllableTrainerFactory(trainer_cls):
     """
     Wrap trainer object with extra logging and custom metric checkpointing
     """
+    trainer_cls = cast(type[Algorithm], trainer_cls)
 
     class Trainer(trainer_cls):
         log_keys = [

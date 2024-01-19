@@ -8,7 +8,7 @@ import time
 from functools import partial
 from pathlib import Path
 from pdb import set_trace as TT
-from typing import Dict
+from typing import Any, Dict, NoReturn, cast
 
 import gymnasium as gym
 import imageio
@@ -95,39 +95,43 @@ best_mean_reward, n_steps = -np.inf, 0
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="train")
-def main(cfg: Config) -> None:
+def main(cfg: Config) -> NoReturn:
     log = logging.getLogger(__name__)
-    hw_utils.capture_std_messages_with_logger(log)
+    # hw_utils.capture_std_messages_with_logger(log)
 
     cfg = validate_config(cfg)
     if cfg is False:
-        print("Invalid config!")
-        return
-    print("OmegaConf.to_yaml(cfg)")
-    print(OmegaConf.to_yaml(cfg))
-    print("Current working directory:", os.getcwd())
+        log.critical("Invalid config!")
+        os._exit(1)
+    # print("OmegaConf.to_yaml(cfg)")
+    # print(OmegaConf.to_yaml(cfg))
+    log.debug(f"Current working directory: {os.getcwd()}")
 
     # FIXME: Check for a 3D problem parent class.
     is_3D_env = False
     if "3D" in cfg.task.problem:
         is_3D_env = True
 
+    if not cfg.log_dir:
+        raise ValueError("cfg.log_dir should be defined")
     log_dir = cfg.log_dir
     log.debug(f"log directory is {log_dir}")
 
     if not cfg.load and not cfg.overwrite:
         if os.path.isdir(log_dir):
-            print(f"Log directory {log_dir} already exists. Will attempt to load.")
+            log.info(f"Log directory {log_dir} already exists. Will attempt to load.")
 
         else:
             os.makedirs(log_dir)
-            print(f"Created new log directory {log_dir}")
+            log.info(f"Created new log directory {log_dir}")
     if cfg.overwrite:
         if not os.path.exists(log_dir):
-            print(f"Log directory {log_dir} does not exist. Will create new directory.")
+            log.info(
+                f"Log directory {log_dir} does not exist. Will create new directory."
+            )
         else:
             # Overwrite the log directory.
-            print(f"Overwriting log directory {log_dir}")
+            log.info(f"Overwriting log directory {log_dir}")
             shutil.rmtree(log_dir, ignore_errors=True)
         os.makedirs(log_dir, exist_ok=True)
 
@@ -204,17 +208,19 @@ def main(cfg: Config) -> None:
             ep_end_time = timer()
             ep_time = ep_end_time - ep_start_time
 
-            print(f"Episode {n_ep} finished after {n_step} steps in {ep_time} seconds.")
-            print(f"FPS: {n_step / ep_time}")
+            log.info(
+                f"Episode {n_ep} finished after {n_step} steps in {ep_time} seconds."
+            )
+            log.info(f"FPS: {n_step / ep_time}")
 
             mean_ep_time += ep_time
 
         mean_ep_time /= n_eps
-        print(f"Average episode time: {mean_ep_time} seconds.")
-        print(f"Average FPS: {n_step / mean_ep_time}.")
+        log.info(f"Average episode time: {mean_ep_time} seconds.")
+        log.info(f"Average FPS: {n_step / mean_ep_time}.")
 
         # import pdb; pdb.set_trace()
-        print("DEBUG: Congratulations! You can now use the environment.")
+        log.info("DEBUG: Congratulations! You can now use the environment.")
         sys.exit()
 
     # checkpoint_path_file = os.path.join(log_dir, 'checkpoint_path.txt')
@@ -273,7 +279,10 @@ def main(cfg: Config) -> None:
 
     # The rllib trainer config (see the docs here: https://docs.ray.io/en/latest/rllib/rllib-training.html)
     num_workers = num_workers if not (cfg.evaluate or cfg.infer) else 1  #
-    trainer_config = TrainerConfigParsers[cfg.algorithm](
+
+    trainer_config: ppo.PPOConfig | dict[str, Any] = TrainerConfigParsers[
+        cfg.algorithm
+    ](
         cfg,
         agent_obs_space,
         log_dir,
@@ -286,6 +295,12 @@ def main(cfg: Config) -> None:
         num_envs_per_worker=num_envs_per_worker,
         eval_num_workers=eval_num_workers,
     )
+    trainer_config = cast(ppo.PPOConfig, trainer_config)
+    trainer_config.training(
+        _enable_learner_api=False,
+    ).rl_module(
+        _enable_rl_module_api=False,
+    )
 
     register_env("pcgrl", make_env)
 
@@ -294,8 +309,8 @@ def main(cfg: Config) -> None:
     # trainer_config_loggable.pop('observation_space')
     # trainer_config_loggable.pop('action_space')
     # trainer_config_loggable.pop('multiagent')
-    print(
-        f"Loading trainer with config: {pretty_print(trainer_config_loggable.to_dict())}"
+    log.info(
+        f"Loading trainer with config:\n{pretty_print(trainer_config_loggable.to_dict())}"
     )
 
     trainer_name = "CustomTrainer"
@@ -329,9 +344,10 @@ def main(cfg: Config) -> None:
                 cfg,
                 timesteps_total=best_result.metrics["timesteps_total"],
             )
-            # sys.exit()
             ray.shutdown()
-            return eval_stats, print("Yay!")
+            log.info("Yay!")
+            log.info(eval_stats)
+            os._exit(0)
 
         elif cfg.infer:
             epi_index = 0
@@ -457,7 +473,8 @@ def main(cfg: Config) -> None:
 
         ray.shutdown()
         # Quit the program before agent starts training.
-        return
+        log.info("Quit the program before agent starts training.")
+        os._exit(0)
 
     # tune.register_trainable("CustomPPO", PPOTrainer)
     tune.register_trainable(f"CustomTrainer", ControllableTrainerFactory(cfg.algorithm))
@@ -519,11 +536,15 @@ def main(cfg: Config) -> None:
         metric="episode_reward_mean",
     )
 
-    if not cfg.overwrite and os.path.exists(cfg.log_dir):
+    trainer_path = os.path.join(str(log_dir), trainer_name, "tuner.pkl")
+
+    if not cfg.overwrite and os.path.exists(trainer_path):
         # if loading from previous checkpoint
         # trainer = trainer_config.build()
-        print(log_dir)
-        tuner = tune.Tuner.restore(os.path.join(str(log_dir), trainer_name))
+        log.debug(f"{log_dir=}")
+        tuner = tune.Tuner.restore(
+            os.path.join(str(log_dir), trainer_name), trainer_name
+        )
         # Note that the `best_result` must always refer to the single experiment, as we are not sweeping over hyperparameters
         # with ray.tune.fit.
         start_new_run = False
@@ -540,9 +561,10 @@ def main(cfg: Config) -> None:
             steps_trained = best_result.metrics["timesteps_total"]
             if steps_trained >= cfg.timesteps_total:
                 ray.shutdown()
-                return print(
+                print(
                     f"No need to reload, already trained {steps_trained} of {cfg.timesteps_total} steps."
                 )
+                os._exit(0)
 
             if best_result.checkpoint is None:
                 ckpt = get_latest_ckpt(log_dir=best_result.log_dir)
@@ -570,7 +592,9 @@ def main(cfg: Config) -> None:
             # Try to resume without creating extra unnecessary experiment folder.
             run_result = launch_run(resume=True)
             # If the experiment has not run to completion, try again but allow for a new experiment folder to be created.
-            tuner = tune.Tuner.restore(os.path.join(str(log_dir), trainer_name))
+            tuner = tune.Tuner.restore(
+                os.path.join(str(log_dir), trainer_name), trainer_name
+            )
             best_result = tuner.get_results().get_best_result(
                 metric="episode_reward_mean", mode="max"
             )  # best_result.config["env_config"]["log_dir"] is still wrong
@@ -608,7 +632,8 @@ def main(cfg: Config) -> None:
             ray.shutdown()
 
     ray.shutdown()
-    return print("Yay! Experiment finished!")
+    log.info("Yay! Experiment finished!")
+    os._exit(0)
 
 
 def map_to_default_policy(agent_id, *args, **kwargs):

@@ -413,7 +413,7 @@ def parse_ppo_config(
     model_cfg,
     multiagent_config={},
     **kwargs,
-):
+) -> PPOConfig:
     num_workers = kwargs.get("num_workers", 0)
     num_envs_per_worker = kwargs.get("num_envs_per_worker", 1)
     # eval_num_workers = kwargs.get('num_workers', 0)

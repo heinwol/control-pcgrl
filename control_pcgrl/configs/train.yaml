@@ -17,8 +17,9 @@ defaults:
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
-debug: true
+# debug: true
 render_mode: save_gif
+render: true
 
 hydra:
   verbose: true
