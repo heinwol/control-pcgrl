@@ -198,9 +198,10 @@
 
             inherit LD_LIBRARY_PATH PATH;
 
+            # :/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
             shellHook = ''
               export CUDA_PATH=${pkgs.cudaPackages_12.cudatoolkit}
-              export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH"
+              export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CUDA_PATH/lib/stubs:$LD_LIBRARY_PATH"
               export PATH="${PATH}:$PATH"
             '';
 
