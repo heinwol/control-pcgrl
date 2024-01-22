@@ -19,6 +19,8 @@
             inherit system;
             config.allowUnfree = true;
           });
+        lib = pkgs.lib;
+        traceitN = N: val: lib.debug.traceSeqN N val val;
         # .extend
         # (final: prev: rec {
         #   python310 = prev.python310.override {
@@ -46,20 +48,32 @@
           gobject-introspection # -//-
         ];
 
+        cudaPackagesV = pkgs.cudaPackages_12;
+        KERNEL_VERSION = "6.5.0";
+        nvidia_x11 = (pkgs.linuxPackages.nvidiaPackages.stable.overrideAttrs rec {
+          version = "545.23.06";
+          name = "nvidia-x11-${version}-${KERNEL_VERSION}";
+          src = pkgs.fetchurl {
+            url = "https://download.nvidia.com/XFree86/Linux-x86_64/${version}/NVIDIA-Linux-x86_64-${version}.run";
+            sha256 = "QTnTKAGfcvKvKHik0BgAemV3PrRqRlM3B9jjZeupCC8=";
+          };
+        });
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
           # "/usr/local/cuda/lib64"
           # "/usr/local/cuda/extras/CUPTI/lib64"
-          pkgs.cudaPackages_12.cudnn
-          pkgs.cudaPackages_12.nccl
-          pkgs.cudaPackages_12.cudatoolkit
-          pkgs.cudaPackages_12.libcublas
+          cudaPackagesV.cudnn
+          cudaPackagesV.nccl
+          cudaPackagesV.cudatoolkit
+          cudaPackagesV.libcublas
+          nvidia_x11
         ];
         PATH = pkgs.lib.makeBinPath [
           # "/usr/local/cuda/"
-          pkgs.cudaPackages_12.nccl
-          pkgs.cudaPackages_12.cudnn
-          pkgs.cudaPackages_12.cudatoolkit
-          pkgs.cudaPackages_12.libcublas
+          cudaPackagesV.nccl
+          cudaPackagesV.cudnn
+          cudaPackagesV.cudatoolkit
+          cudaPackagesV.libcublas
+          nvidia_x11
         ];
 
         pypkgs-build-requirements = with pkgs; {
@@ -113,12 +127,12 @@
             # });
             nvidia-cusparse-cu12 = super.nvidia-cusparse-cu12.overrideAttrs (oldAttrs: {
               autoPatchelfIgnoreMissingDeps = true;
-              # (Bytecode collision happens with nvidia-cusolver-cu11.)
+              # (Bytecode collision happens with nvidia-cusolver-cu12.)
               postFixup = ''
                 rm -r $out/${self.python.sitePackages}/nvidia/{__pycache__,__init__.py}
               '';
               propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ [
-                pkgs.cudaPackages_12.cudatoolkit
+                cudaPackagesV.cudatoolkit
                 # self.nvidia-cublas-cu12
               ];
             });
@@ -151,7 +165,7 @@
                   '';
                 });
               };
-              fixAll = pnames: pkgs.lib.attrsets.mergeAttrsList (map fixNvidiaPackageCollision pnames);
+              fixAll = pnames: lib.attrsets.mergeAttrsList (map fixNvidiaPackageCollision pnames);
             in
             (fixAll [
               "nvidia-cuda-cupti-cu12"
@@ -174,9 +188,28 @@
           overrides = p2n-overrides;
           preferWheels = true; # I don't want to compile all that
         });
-        # }).overrideAttrs (oldAttrs: {
-        #   propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ buildStuff;
-        # });
+        # }).overrideAttrs (oldAttrs: (
+        #   lib.debug.traceSeqN
+        #     1
+        #     (
+        #       # lib.attrsets.attrNames
+        #       # map
+        #       # (x: x.name)
+        #       lib.id
+        #         oldAttrs.name
+        #     )
+        #     {
+        #       buildInputs = (oldAttrs.buildInputs or [ ])
+        #         ++ buildStuff
+        #         ++ (with pkgs; [
+        #         cudaPackages_12.cudatoolkit
+        #         cudaPackages_12.cudnn
+        #         linuxPackages.nvidia_x11
+        #         hello
+        #         fdefrferqfrre
+        #       ]);
+        #     }
+        # ));
 
         devEnvPopulated =
           (devEnv.env.overrideAttrs (oldAttrs: rec {
@@ -184,7 +217,11 @@
               go-task
               direnv
               # tk.dev
-              pkgs.cudaPackages_12.cudatoolkit
+              # cudaPackages_12.cudatoolkit
+              # cudaPackages_12.cudnn
+              nvidia_x11
+              libGLU
+              libGL
               # tcl
               # tk
               # tk.dev
@@ -200,9 +237,12 @@
 
             # :/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
             shellHook = ''
-              export CUDA_PATH=${pkgs.cudaPackages_12.cudatoolkit}
+              export CUDA_PATH=${cudaPackagesV.cudatoolkit}
+              # export CUDA_PATH=/usr/local/cuda-12.3
               export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CUDA_PATH/lib/stubs:$LD_LIBRARY_PATH"
               export PATH="${PATH}:$PATH"
+              export EXTRA_LDFLAGS="-L/lib -L${nvidia_x11}/lib"
+              # export EXTRA_CCFLAGS="-I/usr/include"
             '';
 
           }));

@@ -9,6 +9,7 @@ vars:
     --exclude ".direnv/**"
     --exclude ".nix-env/**"
     --exclude ".venv/**"
+    --exclude "result*/**"
 
 tasks:
   # default:
